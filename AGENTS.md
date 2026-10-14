@@ -33,8 +33,7 @@
 
 ## 計測（Google スプレッドシート）
 - ほかのゲームと同じく、ゲームごとの「プレイ記録」スプレッドシートに1操作1行で記録する。輪廻ガチャは「輪廻ガチャ プレイ記録」（ID: 1PvFtZxVfqXmGilr_TVJZS66aY6GViiJk5S9SpWnP5VQ）。
-- 受け口はそのスプレッドシートに付けた Apps Script のウェブアプリ。コードの正本は H:Codex
-inne-gacha	oolsanalyticsCode.gs（このリポジトリには置かない）。
+- 受け口はそのスプレッドシートに付けた Apps Script のウェブアプリ。コードの正本は `H:/Codex/rinne-gacha/tools/analytics/Code.gs`（このリポジトリには置かない）。
 - ゲーム側は `LOG_URL` にウェブアプリURLを入れると記録が始まる。空なら何も送らない。
 - 送る action：visit（ページを開いた）、roll（転生）、share、mode、lang。集計シートの B2＝プレイ開始（ページを開いた回数）、B3＝リザルト到達（1回以上転生した訪問の数）。全ゲーム集計（ID: 1_YnrUJC-dOml1u8isk0VAILRFDqUXNp4XaYCv0OuPfo）の「まとめ」はこの2つを読む。
 - 名前・メールなど個人を特定できる情報は送らない。訪問IDはページを開くたびに作る使い捨ての文字列。
