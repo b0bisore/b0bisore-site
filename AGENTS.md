@@ -17,6 +17,7 @@
 3. 確認する（下記）。
 4. `git add` → `git commit` → `git push`。
 5. 1〜2分後に公開URLを開いて反映を確認する。
+6. 輪廻ガチャを変えたときは、Claude の Artifact 版（https://claude.ai/artifact/VYkqFKerSEvFc3EBis52Ne）も揃える。`H:/Codex/rinne-gacha/tools/artifact/build-artifact.js` を実行すると `H:/Codex/rinne-gacha/artifact/rinne-gacha.html` ができるので、それを Claude Code の Artifact ツールでこのURLに公開する（Codex からは公開できないので、Claude Code に依頼する）。
 
 ## 確認すること
 - ブラウザで開き、生命転生・人間転生の両方で「転生する」が動くこと。
