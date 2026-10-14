@@ -275,6 +275,17 @@ details.table summary{cursor:pointer;font-weight:700;font-size:15px}
 
 <script>
 /* ---------- 言語 ---------- */
+/* ---------- 計測（Google アナリティクス 4） ----------
+   GA_ID に測定ID（G-で始まる）を入れると計測が始まる。空のあいだは何も送らない */
+const GA_ID="";
+if(GA_ID){
+  const sc=document.createElement("script"); sc.async=true; sc.src="https://www.googletagmanager.com/gtag/js?id="+GA_ID; document.head.appendChild(sc);
+  window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);};
+  gtag("js",new Date()); gtag("config",GA_ID);
+}
+function track(name,params){ try{ if(GA_ID&&window.gtag) gtag("event",name,params||{}); }catch(e){} }
+let played=false;
+
 let lang="ja";
 try{ if(localStorage.getItem("rinne-lang")==="en") lang="en"; }catch(e){}
 const t=(ja,en)=>lang==="en"?en:ja;
@@ -885,6 +896,7 @@ function renderShare(rec){
   $("sh-text").value=full;
 }
 $("sh-copy").onclick=()=>{
+  track("share",{method:"copy",mode});
   const box=$("sh-text"), btn=$("sh-copy");
   const fallback=()=>{box.hidden=false;box.focus();box.select();btn.textContent=t("下の文章を選択しました。コピーしてください","Text selected below — copy it");};
   try{
@@ -923,6 +935,10 @@ function roll(){
   setTimeout(()=>{
     const rec=mode==="human"?drawHuman():drawLife();
     current[mode]=rec; rolls[mode]++;
+    if(!played){ played=true; track("play_start",{mode}); }
+    track("rebirth",rec.type==="human"
+      ?{mode:"human",country:rec.k.nameEn,sex:rec.sex,age:Math.floor(rec.a.age),job:rec.inc.works&&rec.inc.years>0?rec.inc.pj.item[1]:"none"}
+      :{mode:"life",scope:rec.scope,result:rec.pk.item.nameEn});
     hist[mode].unshift([rolls[mode],rec]); hist[mode]=hist[mode].slice(0,10);
     $("ledgerNo").textContent=t("第 "+rolls[mode]+" 回","No. "+rolls[mode]);
     renderCurrent(true);
@@ -930,11 +946,12 @@ function roll(){
     renderHistory(); btn.disabled=false;
   },delay);
 }
-function setLang(l){ lang=l; try{localStorage.setItem("rinne-lang",l);}catch(e){} renderAll(); }
+function setLang(l){ if(l!==lang) track("lang_switch",{lang:l}); lang=l; try{localStorage.setItem("rinne-lang",l);}catch(e){} renderAll(); }
 
 document.querySelectorAll("[data-en]").forEach(el=>{el.dataset.ja=el.textContent;});
-$("tab-human").onclick=()=>{mode="human";renderAll();};
-$("tab-life").onclick=()=>{mode="life";renderAll();};
+$("tab-human").onclick=()=>{if(mode!=="human")track("mode_switch",{mode:"human"});mode="human";renderAll();};
+$("tab-life").onclick=()=>{if(mode!=="life")track("mode_switch",{mode:"life"});mode="life";renderAll();};
+[["sh-x","x"],["sh-line","line"],["sh-fb","facebook"],["sh-threads","threads"],["sh-bsky","bluesky"]].forEach(([id,m])=>$(id).addEventListener("click",()=>track("share",{method:m,mode})));
 $("lang-ja").onclick=()=>setLang("ja");
 $("lang-en").onclick=()=>setLang("en");
 $("roll").onclick=roll;
