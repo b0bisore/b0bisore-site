@@ -174,6 +174,9 @@ details.table summary{cursor:pointer;font-weight:700;font-size:15px}
 .share a:focus-visible,.share button:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
 .share button{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .share-text{width:100%;min-height:6em;font:inherit;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+.memo{display:grid;gap:0}
+.memo+.memo{margin-top:12px}
+.memo-label{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--shu)}
 .cands.evt div{grid-template-columns:minmax(0,1fr) auto}
 .cands.evt small{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .cands.evt div:not(.hit) span:first-child{color:var(--muted)}
@@ -278,9 +281,9 @@ details.table summary{cursor:pointer;font-weight:700;font-size:15px}
 /* ---------- 計測（Google スプレッドシート） ----------
    LOG_URL に Apps Script のウェブアプリURLを入れると、操作ごとに1行ずつスプレッドシートへ記録する。
    空のあいだは何も送らない。名前など個人を特定できる情報は送らない */
-const LOG_URL=""; // 輪廻ガチャ プレイ記録（スプレッドシート）の Apps Script ウェブアプリURL
+const LOG_URL="https://script.google.com/macros/s/AKfycbwxvLKhJA0gQhNPcWZeU9qLtbbVjHkX8Jt5CH3Z7WXrtE--rmiCzl14dby8HEfGZuT5Yw/exec"; // 輪廻ガチャ プレイ記録（スプレッドシート）の Apps Script ウェブアプリURL
 const SID=Math.random().toString(36).slice(2,10); // 訪問ごとの使い捨てID（同じ訪問の操作をまとめるため）
-const GAME_VERSION="v1.0.0";
+const GAME_VERSION="v1.1.0";
 // ゲーム内の出来事 → 記録シートに送る action（play_start は記録シート側で数えるので送らない）
 const ACTIONS={page_view:"visit",rebirth:"roll",share:"share",mode_switch:"mode",lang_switch:"lang"};
 const MODE_JA={life:"生命転生",human:"人間転生"};
@@ -507,11 +510,68 @@ function drawEvents(k,sex,death){
   add("disaster",HAZARD.has(k.name)?.35:.12,Math.random()*death);
   add("lightning",1/15300*Math.min(death,80)/80,10+Math.random()*Math.max(0,death-10));
   add("billion",1/3e6,40+Math.random()*30);
+  // めずらしい体験（生涯で一度でも起きる確率の概算）
+  add("eclipse",.05,8+Math.random()*Math.max(1,death-8));
+  add("aurora",["北欧"].includes(k.region)||["カナダ","ロシア"].includes(k.name)?.5:.03,15+Math.random()*Math.max(1,death-15));
+  add("holeinone",.0005+.004*d,30+Math.random()*30);
+  add("lottery",1e-5,25+Math.random()*50);
+  // 100歳を迎える確率は寿命モデルから計算（乱数ではなく、実際の寿命で判定）
+  const m=calibrate(k,sex), p100=(1-m.q5)*Math.exp(-H(100,m.M,m.c));
+  E.push({id:"century",p:p100,age:100,alive:death>=100,happened:death>=100});
   return {E,school,uni,d};
 }
 const EV_NAME={twin:["双子として生まれる","Born a twin"],school:["小学校を卒業","Finished primary school"],uni:["大学を卒業","Graduated from university"],
   marry:["結婚","Got married"],kids:["子どもが生まれる","Had children"],migrate:["海外へ移住","Emigrated"],conflict:["紛争に巻き込まれる","Caught up in armed conflict"],
-  disaster:["大きな自然災害で被災","Hit by a major natural disaster"],lightning:["雷に打たれる","Struck by lightning"],billion:["億万長者になる","Became a billionaire"]};
+  disaster:["大きな自然災害で被災","Hit by a major natural disaster"],lightning:["雷に打たれる","Struck by lightning"],billion:["億万長者になる","Became a billionaire"],
+  eclipse:["皆既日食を自分の目で見る","Saw a total solar eclipse"],aurora:["オーロラを見る","Saw the northern lights"],holeinone:["ゴルフでホールインワン","Hit a hole-in-one"],
+  lottery:["宝くじの1等に当たる","Won a lottery jackpot"],century:["100歳の誕生日を迎える","Turned 100"]};
+
+/* 思い出：最もレアな経験と、最も幸せだった瞬間 */
+const HAPPY_EV={kids:[35,"第1子が生まれた日","The day my first child was born"],marry:[25,"結婚した日","My wedding day"],uni:[8,"大学を卒業した日","Graduating from university"],
+  migrate:[5,"新しい国で暮らし始めた日","Starting life in a new country"],billion:[10,"億万長者になった日","The day I became a billionaire"],lottery:[10,"宝くじの1等が当たった瞬間","Winning the lottery jackpot"],
+  holeinone:[6,"ホールインワンを決めた瞬間","Sinking a hole-in-one"],aurora:[6,"夜空いっぱいのオーロラを見た夜","A night of northern lights filling the sky"],
+  eclipse:[4,"皆既日食で昼が夜になった瞬間","The moment a total eclipse turned day into night"],century:[6,"100歳を家族に祝われた日","My family celebrating my 100th birthday"]};
+function drawMemories(k,sex,death,ev,inc){
+  const done=ev.E.filter(e=>e.happened&&e.id!=="kids");
+  const rare=done.length?done.reduce((a,b)=>b.p<a.p?b:a):null;
+  const r=(lo,hi)=>lo+Math.random()*Math.max(0,hi-lo);
+  const C=[];
+  for(const e of ev.E){
+    if(!e.happened||!HAPPY_EV[e.id]) continue;
+    const [w,ja,en]=HAPPY_EV[e.id]; C.push({w,ja,en,age:e.id==="kids"?e.ages[0]:e.age});
+  }
+  if(death>=10){
+    C.push({w:15,ja:"家族や友だちと笑い合った、何気ない一日",en:"An ordinary day laughing with family and friends",age:r(10,death)});
+    if(death>=16) C.push({w:12,ja:"好きな人と気持ちが通じ合った日",en:"The day someone I loved loved me back",age:r(16,Math.min(death,40))});
+    if(inc.works&&inc.years>3) C.push({w:8,ja:"仕事で認められた日",en:"The day my work was recognized",age:r(inc.start+3,inc.end)});
+    if(death>=18) C.push({w:2+6*ev.d,ja:"初めての遠い旅で見た景色",en:"The view on my first long journey",age:r(18,Math.min(death,60))});
+  } else {
+    C.push({w:1,ja:"家族に抱きしめられた瞬間",en:"Being held by my family",age:r(0,death)});
+  }
+  const happy=pickWeighted(C,c=>c.w);
+  return {rare,happy,C};
+}
+const rareP=p=>p>=.001?pct(p):prob(p);
+function memoriesHtml(rec){
+  const {rare,happy}=rec.mem, h=happy.item;
+  const rareHtml=rare
+    ? `<span class="big mid">${t(...EV_NAME[rare.id])}</span><span class="note">${evAgeLabel(rare.age)} ・ ${t("確率","chance")} ${rareP(rare.p)}</span>`
+    : `<span class="big mid">—</span><span class="note">${t("大きな経験をする前に旅立ちました","Passed away before any notable experience")}</span>`;
+  return `<div class="memo"><span class="memo-label">${t("最もレアな経験","Rarest experience")}</span>${rareHtml}</div>`+
+    `<div class="memo"><span class="memo-label">${t("最も幸せだった瞬間","Happiest moment")}</span><span class="big mid">${t(h.ja,h.en)}</span><span class="note">${evAgeLabel(h.age)}</span></div>`;
+}
+function memoriesStep(rec){
+  const {rare,happy,C}=rec.mem;
+  return step(t("思い出","Memories"),
+    `<p>${t("最もレアな経験は、この人生で実際に起きた出来事のうち、起きる確率がいちばん低かったものです（子どもの誕生は除く）。",
+      "The rarest experience is whichever event that actually happened in this life had the lowest chance of happening (children excluded).")}</p>`+
+    (rare?`<span class="formula">${t(...EV_NAME[rare.id])} ・ ${t("確率","chance")} <b>${rareP(rare.p)}</b></span>`:`<p>${t("起きた出来事がないため、該当なしです。","Nothing happened, so there is none.")}</p>`)+
+    `<p>${t("幸せの感じ方は統計では決められません。そこで、この人生で起きた出来事と、幸せな記憶としてよく挙がる場面（家族や友人との時間、恋愛、仕事での達成、旅）に重みをつけ、その中から1つ選んでいます。統計ではなく、重みつきの想像です。",
+      "How happy a moment feels cannot be taken from statistics. Instead, the events of this life and the moments people most often name as their happiest (time with family and friends, love, success at work, travel) are weighted, and one is drawn. This is weighted imagination, not statistics.")}</p>`+
+    candList(happy,i=>t(C[i].ja,C[i].en))+
+    `<span class="formula">${draw(happy)} → <b>${t(happy.item.ja,happy.item.en)}</b></span>`);
+}
+
 
 /* 職業：[名前, 英名, 低所得国での重み, 高所得国での重み, 給与の倍率, 必要な学歴(0なし/1小学校/2大学), 性別の倍率[男,女], 手仕事か]
    ILOの就業構造（低所得国は農業が過半、高所得国はサービス・専門職が中心）をもとにした概算 */
@@ -715,8 +775,8 @@ function drawHuman(){
   const pc=pickWeighted(C,c=>c.births), k=pc.item;
   const sx=sexOf(k), ps=pickWeighted(["m","f"],s=>s==="m"?sx.pm:1-sx.pm), sex=ps.item;
   const a=sampleAge(k,sex), pd=causeOf(a.age,k,sex);
-  const ev=drawEvents(k,sex,a.age), inc=drawEarnings(k,sex,a.age,ev);
-  return {type:"human",k,pc,sx,ps,sex,a,pd,ev,inc,year:2026};
+  const ev=drawEvents(k,sex,a.age), inc=drawEarnings(k,sex,a.age,ev), mem=drawMemories(k,sex,a.age,ev,inc);
+  return {type:"human",k,pc,sx,ps,sex,a,pd,ev,inc,mem,year:2026};
 }
 function drawLife(){
   const scope=curScope(), P=[...pool(scope)].sort((a,b)=>b.n-a.n), pk=pickWeighted(P,x=>x.n);
@@ -749,8 +809,9 @@ function renderHuman(rec,animate){
       ?`<span class="big mid">${jobName(inc.pj.item)}</span><span class="note">${t(`${inc.start}歳〜${inc.end}歳 ・ 同じ国・学歴・性別でこの仕事に就く確率 ${pct(inc.pj.p)}`,`Ages ${inc.start}–${inc.end} ・ chance of this job for the same country, education and sex: ${pct(inc.pj.p)}`)}</span>`
       :`<span class="big mid">${t(...inc.home)}</span><span class="note">${t(`お金をもらう仕事を主にしない確率 ${pct(1-inc.part)}`,`Chance of not mainly doing paid work: ${pct(1-inc.part)}`)}</span>`,3):"")+
     row(t("生涯収入","Earnings"),`<span class="big">${money(inc.total,true)}</span><span class="note">${incNote}</span>`,4)+
-    row(t("寿命","Lifespan"),`<span class="big">${ageText(age)}</span><span class="note">${t(dy+"年に没","Died in "+dy)} ・ ${t(cn+"の"+sexName(sex)+"の平均寿命 約"+a.e0.toFixed(1)+"歳","Life expectancy for "+sexPl(sex)+" in "+cn+": about "+a.e0.toFixed(1)+" years")}</span>`,5)+
-    row(t("死因","Cause"),`<span class="big">${causeName(cause)}</span><span class="note">${t(band+"の"+sexName(sex)+"の死因のうち ","Share among deaths of "+sexPl(sex)+" at "+band+": ")}${pct(pd.p)}</span>`,6)+'</dl>';
+    row(t("思い出","Memories"),memoriesHtml(rec),5)+
+    row(t("寿命","Lifespan"),`<span class="big">${ageText(age)}</span><span class="note">${t(dy+"年に没","Died in "+dy)} ・ ${t(cn+"の"+sexName(sex)+"の平均寿命 約"+a.e0.toFixed(1)+"歳","Life expectancy for "+sexPl(sex)+" in "+cn+": about "+a.e0.toFixed(1)+" years")}</span>`,6)+
+    row(t("死因","Cause"),`<span class="big">${causeName(cause)}</span><span class="note">${t(band+"の"+sexName(sex)+"の死因のうち ","Share among deaths of "+sexPl(sex)+" at "+band+": ")}${pct(pd.p)}</span>`,7)+'</dl>';
   if(!animate) $("result").querySelectorAll(".reveal").forEach(el=>el.classList.remove("reveal"));
 
   const lifeLine = a.early
@@ -799,7 +860,8 @@ function renderHuman(rec,animate){
       <span class="formula">${t("個人差","Individual luck")}: ${t("ジニ係数","Gini")} ${inc.gini} → ${t("ばらつき","spread")} σ=${inc.sigma.toFixed(2)}${t("、乱数","; random")} z=<b>${inc.z.toFixed(2)}</b> → ×${inc.indiv.toFixed(2)}${t("（"," (")}${rankText(inc.top,cn)}${t("）",")")}</span>
       <span class="formula">${t(`${inc.start}歳から${inc.end}歳まで ${inc.years}年 × 働けた割合 ${pct(inc.share)}`,`Age ${inc.start} to ${inc.end}: ${inc.years} years × share worked ${pct(inc.share)}`)}</span>
       <span class="formula">= <b>${money(inc.total)}</b></span>`
-      :`<p>${t(`働き始める年齢（${inc.start}歳）まで生きられなかったので、生涯収入は0です。`,`You did not live to working age (${inc.start}), so lifetime earnings are zero.`)}</p>`);
+      :`<p>${t(`働き始める年齢（${inc.start}歳）まで生きられなかったので、生涯収入は0です。`,`You did not live to working age (${inc.start}), so lifetime earnings are zero.`)}</p>`)+
+    memoriesStep(rec);
   $("calcSec").hidden=false;
 }
 function renderLife(rec,animate){
@@ -886,8 +948,8 @@ function shareText(rec){
   if(rec.type==="human"){
     const cn=cName(rec.k), sx=sexName(rec.sex), age=ageText(rec.a.age), cause=causeName(rec.pd.item[0]), m=plain(money(rec.inc.total));
     const inc=rec.inc, job=inc.works&&inc.years>0?jobName(inc.pj.item):null;
-    return `${head}\n${t(`${cn}の${sx}に生まれ、${job?job+"として働き、":""}${age}で亡くなりました（${cause}）。生涯収入は${m}。`,
-      `Born ${sx.toLowerCase()} in ${cn}${job?", worked as: "+job:""}; died at ${age} (${cause}). Lifetime earnings: ${m}.`)}\n${tags}`;
+    return `${head}\n${t(`${cn}の${sx}に生まれ、${job?job+"として働き、":""}${age}で亡くなりました（${cause}）。生涯収入は${m}。いちばん幸せだったのは「${rec.mem.happy.item.ja}」。`,
+      `Born ${sx.toLowerCase()} in ${cn}${job?", worked as: "+job:""}; died at ${age} (${cause}). Lifetime earnings: ${m}. Happiest moment: ${rec.mem.happy.item.en}.`)}\n${tags}`;
   }
   return `${head}\n${t(`「${lName(rec.pk.item)}」に生まれ変わりました（確率 ${plain(prob(rec.pk.p))}）。`,`I came back as: ${lName(rec.pk.item)} (odds ${plain(prob(rec.pk.p))}).`)}\n${tags}`;
 }
