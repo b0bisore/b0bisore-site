@@ -5,7 +5,7 @@
 ## 構成
 | パス | 公開URL | 内容 |
 |---|---|---|
-| `index.html` | https://b0bisore.com/ | ゲーム一覧（BOB'S GAMES） |
+| `index.html` | https://b0bisore.com/ | ゲーム一覧 https://games.b0bisore.com/ （ChatGPT Sites で別管理）へ転送するだけのページ |
 | `game/rinne-gacha/index.html` | https://b0bisore.com/game/rinne-gacha/ | 輪廻ガチャ本体（1ファイルで完結） |
 | `game/rinne-gacha/og.png` | 同上/og.png | SNS共有時のプレビュー画像（1200×630） |
 | `CNAME` | — | 独自ドメイン設定。消さない |
@@ -30,6 +30,9 @@
 - 画面の文字はすべて日本語と英語の両方を用意する（`t("日本語","English")`）。
 - 数字は日本語の単位（万・億・兆）を使わず、カンマ区切りと「×10の何乗（0を並べた表記）」で書く。英語の読み（billion など）は英語表示のときだけ付ける。
 - 統計の数値は概算。出典を変えたら、ページ下部の注意書きも直す。
+
+## ゲーム一覧について
+- 一覧（BOB'S GAMES）は https://games.b0bisore.com/ にあり、このリポジトリでは管理していない。一覧への掲載・変更は本人の指示があってから、一覧側で行う。
 
 ## やらないこと
 - `CNAME` と `.nojekyll` を消さない。
