@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>輪廻ガチャ</title>
+<meta name="description" content="地球上の生き物の個体数や、国ごとの出生数・平均寿命・収入の統計をもとに、次に何に生まれ変わるかを確率で引く無料ブラウザゲーム。">
+<link rel="canonical" href="https://b0bisore.com/game/rinne-gacha/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="輪廻ガチャ">
+<meta property="og:description" content="地球上の生き物の個体数や、国ごとの出生数・平均寿命・収入の統計をもとに、次に何に生まれ変わるかを確率で引く無料ブラウザゲーム。">
+<meta property="og:url" content="https://b0bisore.com/game/rinne-gacha/">
+<meta property="og:image" content="https://b0bisore.com/game/rinne-gacha/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="輪廻ガチャ">
+<meta name="twitter:description" content="地球上の生き物の個体数や、国ごとの出生数・平均寿命・収入の統計をもとに、次に何に生まれ変わるかを確率で引く無料ブラウザゲーム。">
+<meta name="twitter:image" content="https://b0bisore.com/game/rinne-gacha/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20stroke%3D%22%23B3302A%22%20stroke-width%3D%225%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2227%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%227%22%20fill%3D%22%23B3302A%22%2F%3E%3Cpath%20d%3D%22M32%2025V5M32%2039v20M26%2028.5%209%2018.5M38%2035.5l17%2010M26%2035.5l-17%2010M38%2028.5l17-10%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* 閻魔帳（死者の台帳）をモチーフにした一枚の縦長カード。上に六道の輪、下に記録 */
+:root{
+  --paper:#E9ECF1; --surface:#F8F9FB; --ink:#1B2232; --muted:#454D61; --line:#CCD2DD; --shu:#B3302A; --shu-soft:#B3302A1A;
+  --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0F121A; --surface:#171B26; --ink:#E6E8EE; --muted:#B6BCC9; --line:#2A3041; --shu:#E2705C; --shu-soft:#E2705C22; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0F121A; --surface:#171B26; --ink:#E6E8EE; --muted:#B6BCC9; --line:#2A3041; --shu:#E2705C; --shu-soft:#E2705C22; color-scheme:dark}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.75}
+/* 日本語は文節の切れ目で改行する（対応ブラウザのみ。非対応なら通常の改行） */
+:root[lang="ja"] body{word-break:auto-phrase}
+.wrap{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:28px 56px;display:grid;gap:22px}
+
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.title{flex:1;min-width:0}
+.wheel{width:64px;height:64px;flex:none;color:var(--shu)}
+.wheel.spin{animation:spin 1.1s cubic-bezier(.3,.1,.2,1)}
+@keyframes spin{to{transform:rotate(360deg)}}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,7vw,42px);line-height:1.1;margin:0;letter-spacing:.04em;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);flex:none}
+.lang button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:4px 12px;background:transparent;color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.lang button:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
+
+.modes{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;padding:4px;background:var(--surface);gap:4px}
+.modes button{font:inherit;font-weight:700;border:0;border-radius:7px;padding:10px 8px;background:transparent;color:var(--muted);cursor:pointer}
+.modes button[aria-selected="true"]{background:var(--ink);color:var(--surface)}
+.modes button:focus-visible,.roll:focus-visible,summary:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
+
+.intro{margin:0;color:var(--muted);font-size:15px}
+.opts{display:grid;gap:10px}
+/* 横向きの漏斗：左から右へ帯が細くなり、脊椎動物の先で3本に分かれる */
+.funnel{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:4px;height:156px}
+.lv{position:relative;display:block;min-width:0;cursor:pointer}
+.lv input{position:absolute;opacity:0;pointer-events:none}
+.lv>span{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;padding:4px 3px;border:1px solid var(--line);border-radius:6px;background:var(--surface);transition:background .2s,color .2s,opacity .2s}
+.lv b{font-size:13px;line-height:1.25;overflow-wrap:anywhere;hyphens:manual}
+.lv small{display:block;margin-top:2px;font-size:11.5px;line-height:1.2;color:var(--muted);font-variant-numeric:tabular-nums}
+.lv:hover>span{border-color:var(--shu)}
+.lv.passed>span{background:var(--shu-soft);border-color:transparent}
+.lv.off>span{opacity:.45}
+.lv input:checked+span{background:var(--shu);border-color:var(--shu);color:#fff}
+.lv input:checked+span small{color:#fff}
+.lv input:focus-visible+span{outline:2px solid var(--shu);outline-offset:2px}
+.trunk{grid-row:1/4;align-self:center}
+.trunk[data-i="0"]{grid-column:1;height:100%}
+.trunk[data-i="1"]{grid-column:2;height:86%}
+.trunk[data-i="2"]{grid-column:3;height:72%}
+.trunk[data-i="3"]{grid-column:4;height:60%}
+.br{grid-column:5}
+.br[data-r="1"]{grid-row:1}.br[data-r="2"]{grid-row:2}.br[data-r="3"]{grid-row:3}
+.tip{grid-column:6;grid-row:2;height:86%;align-self:center}
+/* 枝分かれの線 */
+.spine{grid-column:5;grid-row:1/4;position:relative;pointer-events:none}
+.spine::before{content:"";position:absolute;left:-4px;top:calc(100% / 6);bottom:calc(100% / 6);border-left:2px solid var(--line)}
+.br::before,.tip::before{content:"";position:absolute;left:-5px;top:50%;width:5px;border-top:2px solid var(--line)}
+.spine.on::before,.br.on::before,.tip.on::before{border-color:var(--shu)}
+.scope-info{display:grid;gap:2px;padding:10px 14px;border-left:3px solid var(--shu);background:var(--surface);border-radius:0 6px 6px 0;font-size:14px;font-variant-numeric:tabular-nums}
+.scope-info b{font-size:15px}
+.scope-info .digits{display:block}
+
+.roll{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.2em;padding:16px;border-radius:12px;border:0;background:var(--shu);color:#fff;cursor:pointer;transition:transform .12s, filter .12s}
+.roll:hover{filter:brightness(1.07)}
+.roll:active{transform:scale(.98)}
+.roll:disabled{opacity:.6;cursor:wait}
+
+.ledger{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:22px 22px 18px;min-height:260px}
+.ledger::before{content:"";position:absolute;inset:6px;border:1px solid var(--line);border-radius:2px;pointer-events:none}
+.ledger-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:10px;border-bottom:2px solid var(--ink);margin-bottom:6px}
+.ledger-title{font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.3em}
+.ledger-no{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.seal{position:absolute;right:18px;top:52px;width:64px;height:64px;border:3px solid var(--shu);border-radius:6px;color:var(--shu);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:15px;line-height:1.05;writing-mode:vertical-rl;letter-spacing:.1em;transform:rotate(-8deg);opacity:.85}
+.seal.stamp{animation:stamp .45s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes stamp{from{transform:rotate(-8deg) scale(1.8);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:.85}}
+
+.row{display:grid;grid-template-columns:64px 1fr;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line);min-width:0}
+.row:last-child{border-bottom:0}
+.row dt{font-family:var(--display);font-weight:800;font-size:16px;color:var(--shu);letter-spacing:.2em;padding-top:4px}
+.row dd{margin:0;min-width:0;padding-right:70px}
+.row:nth-child(n+2) dd{padding-right:0}
+.creature{display:flex;align-items:center;gap:14px}
+.emoji{font-size:52px;line-height:1;flex:none;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
+.wiki{display:inline-block;margin-top:4px;font-size:14px;color:var(--shu);text-decoration:none;border-bottom:1px solid currentColor}
+.wiki:hover{border-bottom-width:2px}
+.wiki:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
+.scale{position:relative;height:58px;margin:8px 4px 0}
+.scale .track{position:absolute;left:0;right:0;top:27px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--line),var(--muted))}
+.scale .tick{position:absolute;top:23px;width:1px;height:12px;background:var(--muted)}
+.scale .tl{position:absolute;font-size:12px;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
+.scale .tl.hi{top:2px}.scale .tl.lo{top:38px}
+.scale .mk{position:absolute;top:21px;width:16px;height:16px;border-radius:50%;background:var(--shu);border:3px solid var(--surface);transform:translateX(-50%);box-shadow:0 0 0 1px var(--shu)}
+.scale-ends{display:flex;justify-content:space-between;font-size:12px;margin:0 4px}
+.big{font-family:var(--display);font-weight:800;font-size:clamp(22px,5.6vw,30px);line-height:1.3;display:block;text-wrap:balance}
+.big.mid{font-size:clamp(18px,4.6vw,22px)}
+.note{display:block;color:var(--muted);font-size:14px;margin-top:2px;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:12px;letter-spacing:.08em;border:1px solid var(--line);border-radius:4px;padding:0 6px;margin-right:6px;color:var(--muted);vertical-align:2px}
+.reveal{animation:rise .5s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.placeholder{color:var(--muted);padding:40px 0 20px;text-align:center;font-size:14px}
+
+.history h2{font-family:var(--display);font-size:15px;margin:0 0 8px;letter-spacing:.15em}
+.history ol{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:14px}
+.history li{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;min-width:0}
+.history li span:first-child{color:var(--muted)}
+.history li>span:last-child{color:var(--muted);text-align:right}
+
+details.table{border-top:1px solid var(--line);padding-top:12px}
+details.table summary{cursor:pointer;font-weight:700;font-size:15px}
+.tbl{margin-top:10px;display:grid;gap:0;font-size:14px}
+.tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,13em);gap:10px;padding:5px 0;border-bottom:1px solid var(--line);align-items:center}
+.tr .bar{height:4px;background:var(--line);border-radius:2px;margin-top:3px;overflow:hidden}
+.tr .bar i{display:block;height:100%;background:var(--shu)}
+.tr .p{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.foot{font-size:13px;color:var(--muted);margin:0}
+
+.calc{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:16px 18px}
+.calc h2{font-family:var(--display);font-size:16px;margin:0 0 4px;letter-spacing:.15em}
+.calc .lead{margin:0 0 12px;font-size:14px;color:var(--muted)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:s}
+.steps>li{display:grid;grid-template-columns:2em minmax(0,1fr);gap:10px;counter-increment:s}
+.steps>li::before{content:counter(s);font-family:var(--display);font-weight:800;color:var(--surface);background:var(--shu);border-radius:50%;width:1.7em;height:1.7em;display:grid;place-items:center;font-size:13px;margin-top:2px}
+.steps h3{margin:0;font-size:15px}
+.steps p{margin:4px 0 0;font-size:14px}
+.formula{display:block;margin-top:6px;background:var(--paper);border-radius:4px;padding:8px 12px;font-size:14px;line-height:1.6;font-variant-numeric:tabular-nums;overflow-x:auto;white-space:nowrap}
+.formula b{color:var(--shu)}
+.cands{margin-top:6px;display:grid;font-size:14px}
+.cands div{display:grid;grid-template-columns:minmax(0,1fr) minmax(5em,50%);gap:8px;padding:3px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.cands div span:last-child{text-align:right;color:var(--muted)}
+.cands .hit{color:var(--shu);font-weight:700}
+.cands .hit span:last-child{color:var(--shu)}
+.cands i{display:block;height:3px;background:var(--line);border-radius:2px;margin-top:2px}
+.cands i u{display:block;height:100%;background:var(--muted);border-radius:2px}
+.cands .hit i u{background:var(--shu)}
+.share{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.share-label{width:100%;font-size:13px;color:var(--muted)}
+.share a,.share button{font:inherit;font-size:14px;font-weight:700;line-height:1;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none;cursor:pointer}
+.share a:hover,.share button:hover{border-color:var(--shu);color:var(--shu)}
+.share a:focus-visible,.share button:focus-visible{outline:2px solid var(--shu);outline-offset:2px}
+.share button{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.share-text{width:100%;min-height:6em;font:inherit;font-size:13px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+.cands.evt div{grid-template-columns:minmax(0,1fr) auto}
+.cands.evt small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.cands.evt div:not(.hit) span:first-child{color:var(--muted)}
+.events{list-style:none;margin:2px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line);display:grid;gap:6px}
+.events li{position:relative;display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;font-size:15px;line-height:1.5}
+.events li::before{content:"";position:absolute;left:-20px;top:.5em;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--shu)}
+.events li span:first-child{color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* 英語表示のときは見出しの字間を詰め、ラベル欄を広げる */
+:root[lang="en"] .row{grid-template-columns:92px 1fr}
+:root[lang="en"] .row dt{letter-spacing:0;font-size:15px}
+:root[lang="en"] .roll{letter-spacing:.06em}
+:root[lang="en"] .ledger-title,:root[lang="en"] .calc h2,:root[lang="en"] .history h2{letter-spacing:.04em}
+:root[lang="en"] .seal{writing-mode:horizontal-tb;font-size:12px;letter-spacing:.04em}
+
+@media (max-width:460px){header{position:relative;padding-top:38px}.lang{position:absolute;top:0;right:0}}
+@media (max-width:460px){.row,:root[lang="en"] .row{grid-template-columns:1fr;gap:2px}.row dd{padding-right:0}.row:first-child dd{padding-right:64px}.seal{width:54px;height:54px;font-size:13px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <svg class="wheel" id="wheel" viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5">
+      <circle cx="32" cy="32" r="28"/><circle cx="32" cy="32" r="6" fill="currentColor"/>
+      <g stroke-linecap="round">
+        <line x1="32" y1="26" x2="32" y2="4"/><line x1="32" y1="38" x2="32" y2="60"/>
+        <line x1="26.8" y1="29" x2="7.8" y2="18"/><line x1="37.2" y1="35" x2="56.2" y2="46"/>
+        <line x1="26.8" y1="35" x2="7.8" y2="46"/><line x1="37.2" y1="29" x2="56.2" y2="18"/>
+      </g>
+    </svg>
+    <div class="title">
+      <h1 data-en="Rebirth Gacha">輪廻ガチャ</h1>
+      <p class="sub" data-en="Draw your next life, with odds based on real-world statistics">現実の統計にもとづいた確率で、次の生を引く</p>
+    </div>
+    <div class="lang" role="group" aria-label="Language / 言語">
+      <button id="lang-ja" aria-pressed="true">日本語</button>
+      <button id="lang-en" aria-pressed="false">English</button>
+    </div>
+  </header>
+
+  <div class="modes" role="tablist">
+    <button id="tab-life" role="tab" aria-selected="true" data-en="All-life rebirth">生命転生</button>
+    <button id="tab-human" role="tab" aria-selected="false" data-en="Human rebirth">人間転生</button>
+  </div>
+
+  <p class="intro" id="intro"></p>
+
+  <div class="opts" id="lifeOpts" hidden>
+    <div class="funnel" role="radiogroup">
+      <label class="lv trunk" data-i="0"><input type="radio" name="scope" id="scope-all" value="all" checked><span><b data-en="All life">全生物</b><small id="lv-all"></small></span></label>
+      <label class="lv trunk" data-i="1"><input type="radio" name="scope" id="scope-multi" value="multi"><span><b data-en="Multi&shy;cellular">多細胞</b><small id="lv-multi"></small></span></label>
+      <label class="lv trunk" data-i="2"><input type="radio" name="scope" id="scope-animal" value="animal"><span><b data-en="Animals">動物</b><small id="lv-animal"></small></span></label>
+      <label class="lv trunk" data-i="3"><input type="radio" name="scope" id="scope-vert" value="vert"><span><b data-en="Verte&shy;brates">脊椎動物</b><small id="lv-vert"></small></span></label>
+      <i class="spine" id="spine"></i>
+      <label class="lv br" data-r="1" id="br-fish"><input type="radio" name="scope" id="scope-fish" value="fish"><span><b data-en="Fish">魚類</b><small id="lv-fish"></small></span></label>
+      <label class="lv br" data-r="2" id="br-mammal"><input type="radio" name="scope" id="scope-mammal" value="mammal"><span><b data-en="Mammals">哺乳類</b><small id="lv-mammal"></small></span></label>
+      <label class="lv br" data-r="3" id="br-bird"><input type="radio" name="scope" id="scope-bird" value="bird"><span><b data-en="Birds">鳥類</b><small id="lv-bird"></small></span></label>
+      <label class="lv tip" id="br-primate"><input type="radio" name="scope" id="scope-primate" value="primate"><span><b data-en="Primates">霊長類</b><small id="lv-primate"></small></span></label>
+    </div>
+    <div class="scope-info" id="scopeInfo" aria-live="polite"></div>
+  </div>
+
+  <button class="roll" id="roll" data-en="Be reborn">転生する</button>
+
+  <section class="ledger" aria-live="polite">
+    <div class="ledger-head"><span class="ledger-title" data-en="Ledger of Souls">閻魔帳</span><span class="ledger-no" id="ledgerNo"></span></div>
+    <div class="seal" id="seal" hidden data-en="REBORN">転生済</div>
+    <div id="result"></div>
+    <div class="share" id="share" hidden>
+      <span class="share-label" data-en="Share this result">この結果をシェア</span>
+      <a id="sh-x" target="_blank" rel="noopener">X</a>
+      <a id="sh-line" target="_blank" rel="noopener">LINE</a>
+      <a id="sh-fb" target="_blank" rel="noopener">Facebook</a>
+      <a id="sh-threads" target="_blank" rel="noopener">Threads</a>
+      <a id="sh-bsky" target="_blank" rel="noopener">Bluesky</a>
+      <button id="sh-copy" type="button"></button>
+      <textarea id="sh-text" class="share-text" readonly hidden aria-label="Share text"></textarea>
+    </div>
+  </section>
+
+  <section class="calc" id="calcSec" hidden>
+    <h2 data-en="How this result was calculated">この結果の確率計算</h2>
+    <p class="lead" data-en="At each stage we draw one random number between 0 and 1. The result is whichever candidate's slice of the odds it lands in.">各段階で 0〜1 の乱数を1つ引き、候補ごとの確率の幅のどこに入ったかで結果が決まります。</p>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section class="history" id="historySec" hidden>
+    <h2 data-en="Past lives">これまでの転生</h2>
+    <ol id="history"></ol>
+  </section>
+
+  <details class="table" id="tableSec">
+    <summary id="tableSummary"></summary>
+    <div class="tbl" id="tbl"></div>
+  </details>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+/* ---------- 言語 ---------- */
+let lang="ja";
+try{ if(localStorage.getItem("rinne-lang")==="en") lang="en"; }catch(e){}
+const t=(ja,en)=>lang==="en"?en:ja;
+
+/* ---------- 共通 ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
+/* 数の表記：100億未満はカンマ区切り、それ以上は 1.1×10³¹ の形。英語の読みを併記 */
+const SUP="⁰¹²³⁴⁵⁶⁷⁸⁹";
+const sup=e=>(e<0?"⁻":"")+String(Math.abs(e)).split("").map(d=>SUP[d]).join("");
+const EN=[[1e30,"nonillion"],[1e27,"octillion"],[1e24,"septillion"],[1e21,"sextillion"],[1e18,"quintillion"],[1e15,"quadrillion"],[1e12,"trillion"],[1e9,"billion"],[1e6,"million"],[1e3,"thousand"]];
+function en(n){
+  for(const [v,w] of EN) if(n>=v){ const x=n/v; return (x>=10?Math.round(x):+x.toFixed(1))+" "+w; }
+  return String(Math.round(n));
+}
+/* 100億以上は 1.1×10³¹ に、0を並べた桁表記（カンマ付き）を添える。英語表示のときだけ英語の読みも付ける */
+function fmtN(n,reading=true){
+  let e=Math.floor(Math.log10(n)), m=+(n/10**e).toFixed(1);
+  if(m>=10){m=1;e++;}
+  const r=n>=100?m*10**e:Math.round(n*10)/10; // 有効数字2桁にそろえる
+  let main;
+  if(n<100) main=String(r);
+  else if(n<1e10) main=Math.round(r).toLocaleString("en-US");
+  else {
+    const digits=(BigInt(Math.round(m*10))*10n**BigInt(e-1)).toLocaleString("en-US");
+    main=`${m}×10${sup(e)}<span class="digits">${t("（"+digits+"）"," ("+digits+")")}</span>`;
+  }
+  return reading&&lang==="en"&&n>=1000 ? `${main}<span class="en"> (${en(r)})</span>` : main;
+}
+function prob(p){
+  if(p>=0.999&&p<1) return (p*100).toFixed(3)+"%";
+  if(p>=0.001) return (p*100).toFixed(p>=0.1?1:2)+"%";
+  if(p<=0) return t("ほぼ 0","nearly 0");
+  return t("約 1/","about 1 in ")+fmtN(1/p);
+}
+/* 重みつき抽選。乱数 r と、当たった候補の区間 [lo, hi) も返す */
+function pickWeighted(items,w){
+  const ws=items.map(w), total=ws.reduce((a,b)=>a+b,0), r=Math.random();
+  let acc=0;
+  for(let i=0;i<items.length;i++){
+    const lo=acc/total; acc+=ws[i];
+    if(r*total<acc||i===items.length-1) return {item:items[i],idx:i,r,lo,hi:acc/total,p:ws[i]/total,ws,total};
+  }
+}
+const num=x=>x===0?"0":x>=1e-4?x.toFixed(4):x.toExponential(2);
+const pct=p=>(p*100).toFixed(p>=.999&&p<1?3:p>=.1?1:p>=.001?2:3)+"%";
+const draw=pk=>t(`乱数 <b>${num(pk.r)}</b> が区間 ${num(pk.lo)} 〜 ${num(pk.hi)} に入った`,`Random number <b>${num(pk.r)}</b> landed in the interval ${num(pk.lo)} – ${num(pk.hi)}`);
+
+/* ---------- 人間転生：国ごとの年間出生数(千人)・平均寿命・5歳未満死亡率(‰)  2023年前後の国連推計の概算 ---------- */
+const REGION_EN={"南アジア":"South Asia","東アジア":"East Asia","西アフリカ":"West Africa","中部アフリカ":"Central Africa","東南アジア":"Southeast Asia","東アフリカ":"East Africa",
+  "北米":"North America","南米":"South America","北アフリカ":"North Africa","中米":"Central America","東欧":"Eastern Europe","中東":"Middle East","南部アフリカ":"Southern Africa",
+  "中央アジア":"Central Asia","西欧":"Western Europe","南欧":"Southern Europe","オセアニア":"Oceania","カリブ":"Caribbean","北欧":"Northern Europe"};
+const C=[
+["インド","India","南アジア",23200,72,30],["中国","China","東アジア",9000,78,7],["ナイジェリア","Nigeria","西アフリカ",7900,54,107],["パキスタン","Pakistan","南アジア",6900,67,60],
+["コンゴ民主共和国","DR Congo","中部アフリカ",4600,60,76],["インドネシア","Indonesia","東南アジア",4500,71,21],["エチオピア","Ethiopia","東アフリカ",4000,66,47],["アメリカ","United States","北米",3600,79,6],
+["バングラデシュ","Bangladesh","南アジア",3000,74,29],["ブラジル","Brazil","南米",2500,76,14],["タンザニア","Tanzania","東アフリカ",2200,67,41],["エジプト","Egypt","北アフリカ",2100,71,19],
+["フィリピン","Philippines","東南アジア",1800,70,26],["メキシコ","Mexico","中米",1800,75,13],["ウガンダ","Uganda","東アフリカ",1700,63,40],["ケニア","Kenya","東アフリカ",1500,63,37],
+["アフガニスタン","Afghanistan","南アジア",1500,63,55],["ベトナム","Vietnam","東南アジア",1400,74,20],["スーダン","Sudan","北アフリカ",1400,66,51],["アンゴラ","Angola","中部アフリカ",1400,62,64],
+["ロシア","Russia","東欧",1260,73,5],["イラク","Iraq","中東",1100,72,23],["イラン","Iran","中東",1100,77,12],["南アフリカ","South Africa","南部アフリカ",1100,64,28],
+["モザンビーク","Mozambique","南部アフリカ",1100,60,67],["ニジェール","Niger","西アフリカ",1100,62,115],["トルコ","Türkiye","中東",1000,77,9],["コートジボワール","Côte d'Ivoire","西アフリカ",900,59,73],
+["カメルーン","Cameroon","中部アフリカ",900,63,68],["マリ","Mali","西アフリカ",900,59,97],["マダガスカル","Madagascar","東アフリカ",900,65,64],["イエメン","Yemen","中東",900,64,60],
+["ガーナ","Ghana","西アフリカ",900,64,42],["ウズベキスタン","Uzbekistan","中央アジア",900,72,14],["ミャンマー","Myanmar","東南アジア",850,67,42],["ブルキナファソ","Burkina Faso","西アフリカ",800,60,82],
+["ソマリア","Somalia","東アフリカ",800,56,104],["アルジェリア","Algeria","北アフリカ",800,76,22],["チャド","Chad","中部アフリカ",750,55,107],["日本","Japan","東アジア",727,84,2],
+["ドイツ","Germany","西欧",693,81,4],["イギリス","United Kingdom","西欧",685,81,4],["フランス","France","西欧",678,83,4],["マラウイ","Malawi","東アフリカ",650,63,39],
+["ザンビア","Zambia","南部アフリカ",620,62,56],["モロッコ","Morocco","北アフリカ",600,75,17],["サウジアラビア","Saudi Arabia","中東",600,77,7],["ネパール","Nepal","南アジア",550,70,26],
+["セネガル","Senegal","西アフリカ",550,68,37],["タイ","Thailand","東南アジア",520,79,9],["コロンビア","Colombia","南米",500,77,13],["ギニア","Guinea","西アフリカ",500,60,95],
+["ペルー","Peru","南米",470,77,14],["アルゼンチン","Argentina","南米",460,77,8],["ベナン","Benin","西アフリカ",450,60,81],["ジンバブエ","Zimbabwe","南部アフリカ",450,62,50],
+["シリア","Syria","中東",450,72,21],["ベネズエラ","Venezuela","南米",450,72,23],["マレーシア","Malaysia","東南アジア",430,76,8],["カザフスタン","Kazakhstan","中央アジア",400,74,9],
+["南スーダン","South Sudan","東アフリカ",400,56,99],["ルワンダ","Rwanda","東アフリカ",380,67,38],["イタリア","Italy","南欧",380,83,3],["グアテマラ","Guatemala","中米",350,72,22],
+["カンボジア","Cambodia","東南アジア",350,70,24],["カナダ","Canada","北米",350,82,5],["北朝鮮","North Korea","東アジア",330,73,15],["スペイン","Spain","南欧",320,84,3],
+["オーストラリア","Australia","オセアニア",290,83,4],["ハイチ","Haiti","カリブ",270,64,56],["ポーランド","Poland","東欧",270,78,4],["スリランカ","Sri Lanka","南アジア",250,77,7],
+["韓国","South Korea","東アジア",230,84,3],["パプアニューギニア","Papua New Guinea","オセアニア",230,66,42],["ウクライナ","Ukraine","東欧",190,70,8],["チリ","Chile","南米",180,81,7],
+["イスラエル","Israel","中東",180,83,3],["ラオス","Laos","東南アジア",170,69,41],["オランダ","Netherlands","西欧",165,82,4],["チュニジア","Tunisia","北アフリカ",160,76,16],
+["台湾","Taiwan","東アジア",135,80,4],["スウェーデン","Sweden","北欧",100,83,2],["アラブ首長国連邦","United Arab Emirates","中東",100,79,6],["キューバ","Cuba","カリブ",90,78,5],
+["ポルトガル","Portugal","南欧",85,82,3],["スイス","Switzerland","西欧",80,84,4],["モンゴル","Mongolia","東アジア",70,71,15],["ギリシャ","Greece","南欧",70,81,4],
+["ニュージーランド","New Zealand","オセアニア",58,82,5],["フィンランド","Finland","北欧",43,82,2],["アイスランド","Iceland","北欧",4.3,83,2],["ツバル","Tuvalu","オセアニア",0.25,65,21]
+].map(([name,nameEn,region,births,e0,u5])=>({name,nameEn,region,births,e0,u5}));
+const birthsTotal=C.reduce((s,c)=>s+c.births,0);
+const cName=k=>t(k.name,k.nameEn), rName=k=>t(k.region,REGION_EN[k.region]);
+
+/* 性別：出生性比（女100に対する男の数）と、男女の平均寿命の差。指定のない国は 105 と 5歳 */
+const SRB={"中国":111,"インド":108,"ベトナム":111,"パキスタン":106};
+const GAP={"ロシア":10,"ウクライナ":10,"カザフスタン":8,"日本":6,"韓国":6,"ポーランド":7.5,"インド":3,"パキスタン":2.5,"ナイジェリア":1.5,"アフガニスタン":3};
+const sexOf=k=>{const s=SRB[k.name]||105; return {pm:s/(s+100),srb:s};};
+const sexName=s=>s==="m"?t("男性","Male"):t("女性","Female");
+const sexPl=s=>s==="m"?t("男性","males"):t("女性","females");
+function sexParams(k,sex){
+  const gap=GAP[k.name]??5, sgn=sex==="m"?-1:1;
+  return {e0:k.e0+sgn*gap/2, u5:k.u5*(sex==="m"?1.08:.92), gap};
+}
+
+/* 寿命モデル：5歳未満死亡率 + ゴンペルツ・メイカム型（年をとるほど死亡率が指数的に上がる）。平均寿命に合うよう国・性別ごとに較正 */
+const B=0.105;
+const H=(x,M,c)=>c*(x-5)+Math.exp(B*(x-M))-Math.exp(B*(5-M));
+function meanAdult(M,c){let s=5,dx=.25;for(let x=5;x<125;x+=dx)s+=Math.exp(-H(x+dx/2,M,c))*dx;return s;}
+function calibrate(k,sex){
+  const key="cal_"+sex; if(k[key]) return k[key];
+  const sp=sexParams(k,sex), q5=sp.u5/1000, c=clamp(.0004+(82-sp.e0)*.00025,.0004,.008);
+  const target=(sp.e0-q5*.8)/(1-q5); let lo=30,hi=120;
+  for(let i=0;i<40;i++){const m=(lo+hi)/2; if(meanAdult(m,c)<target) lo=m; else hi=m;}
+  return k[key]={...sp,q5,c,M:(lo+hi)/2};
+}
+function earlyCdf(a){ // 5歳未満で亡くなった子の中での位置
+  const n=28/365;
+  if(a<1) return .72*(a<n ? .45*a/n : .45+.55*(a-n)/(1-n));
+  return .72+.28*(a-1)/4;
+}
+function sampleAge(k,sex){
+  const m=calibrate(k,sex), u1=Math.random(), out={...m,u1};
+  if(u1<m.q5){
+    out.early=true;
+    out.age = Math.random()<.72 ? (Math.random()<.45 ? Math.random()*28/365 : 28/365+Math.random()*(1-28/365)) : 1+Math.random()*4;
+    out.cdf=m.q5*earlyCdf(out.age);
+  } else {
+    out.early=false; out.u2=Math.random();
+    const tt=-Math.log(1-out.u2); let lo=5,hi=125;
+    for(let i=0;i<40;i++){const x=(lo+hi)/2; if(H(x,m.M,m.c)<tt) lo=x; else hi=x;}
+    out.age=Math.min(lo,122.4);
+    out.cdf=m.q5+(1-m.q5)*out.u2;
+  }
+  return out;
+}
+function ageText(a){
+  if(a<28/365){const d=Math.max(1,Math.floor(a*365)); return t("生後"+d+"日",d+(d===1?" day old":" days old"));}
+  if(a<1){const m=Math.max(1,Math.floor(a*12)); return t("生後"+m+"か月",m+(m===1?" month old":" months old"));}
+  const y=Math.floor(a); return t(y+"歳",y+(y===1?" year old":" years old"));
+}
+
+/* 死因：年齢帯ごとに [低所得国での重み, 高所得国での重み]。平均寿命から国の位置を補間 */
+const CAUSES={
+  infant:[["早産の合併症",30,35],["出生時の仮死・外傷",22,12],["新生児の敗血症・感染症",15,5],["先天異常",8,30],["肺炎",12,3],["下痢症",8,1],["マラリア",5,0],["乳幼児突然死症候群",.5,8]],
+  child:[["肺炎",22,5],["下痢症",18,1],["マラリア",18,0],["栄養失調",8,0],["はしか",4,0],["先天異常",6,20],["溺水",6,15],["交通事故",3,12],["小児がん",1,18],["髄膜炎",5,2]],
+  young:[["マラリア",14,0],["下痢症",10,.5],["溺水",9,8],["交通事故",9,22],["小児がん",3,25],["HIV/エイズ",7,0],["結核",6,.5],["髄膜炎",6,1],["自殺",1,10],["先天異常",3,10]],
+  youth:[["交通事故",15,25],["自殺",8,22],["他殺・暴力",8,10],["薬物の過剰摂取",1,16],["HIV/エイズ",12,.5],["結核",8,.5],["妊娠・出産の合併症",8,.5],["溺水",5,2],["がん",5,12],["紛争・戦争",4,0],["マラリア",5,0]],
+  mid:[["心筋梗塞などの虚血性心疾患",10,18],["がん",8,30],["交通事故",9,8],["自殺",5,12],["HIV/エイズ",12,.5],["結核",10,.5],["肝硬変",6,6],["脳卒中",8,6],["他殺・暴力",5,3],["薬物の過剰摂取",.5,8],["妊娠・出産の合併症",4,.2]],
+  late:[["虚血性心疾患",18,20],["脳卒中",16,8],["肺がん",3,12],["大腸がん",2,7],["胃がん",3,4],["肝臓がん",4,4],["膵臓がん",1,5],["乳がん",2,4],["慢性閉塞性肺疾患(COPD)",8,6],["糖尿病",7,5],["結核",8,.5],["肝硬変",6,5],["慢性腎臓病",5,4],["肺炎",7,3],["子宮頸がん",3,1],["前立腺がん",1,4]],
+  old:[["虚血性心疾患",22,18],["脳卒中",20,10],["認知症",3,12],["慢性閉塞性肺疾患(COPD)",10,6],["肺炎",10,8],["老衰",2,12],["肺がん",2,6],["大腸がん",1,4],["慢性腎臓病",5,4],["糖尿病",6,4],["転倒による外傷",1,3],["誤嚥性肺炎",2,5],["前立腺がん",1,5]]
+};
+const CAUSE_EN={"早産の合併症":"Preterm birth complications","出生時の仮死・外傷":"Birth asphyxia and trauma","新生児の敗血症・感染症":"Neonatal sepsis and infections",
+  "先天異常":"Congenital anomalies","肺炎":"Pneumonia","下痢症":"Diarrheal disease","マラリア":"Malaria","乳幼児突然死症候群":"Sudden infant death syndrome",
+  "栄養失調":"Malnutrition","はしか":"Measles","溺水":"Drowning","交通事故":"Road injury","小児がん":"Childhood cancer","髄膜炎":"Meningitis","HIV/エイズ":"HIV/AIDS",
+  "結核":"Tuberculosis","自殺":"Suicide","他殺・暴力":"Homicide and violence","薬物の過剰摂取":"Drug overdose","妊娠・出産の合併症":"Maternal complications",
+  "がん":"Cancer","紛争・戦争":"Conflict and war","心筋梗塞などの虚血性心疾患":"Ischemic heart disease (heart attack etc.)","肝硬変":"Cirrhosis","脳卒中":"Stroke",
+  "虚血性心疾患":"Ischemic heart disease","肺がん":"Lung cancer","大腸がん":"Colorectal cancer","胃がん":"Stomach cancer","肝臓がん":"Liver cancer","膵臓がん":"Pancreatic cancer",
+  "乳がん":"Breast cancer","慢性閉塞性肺疾患(COPD)":"Chronic obstructive pulmonary disease (COPD)","糖尿病":"Diabetes","慢性腎臓病":"Chronic kidney disease",
+  "子宮頸がん":"Cervical cancer","前立腺がん":"Prostate cancer","認知症":"Dementia","老衰":"Old age","転倒による外傷":"Fall injury","誤嚥性肺炎":"Aspiration pneumonia"};
+const causeName=n=>t(n,CAUSE_EN[n]);
+const BANDS={infant:["0歳","age 0"],child:["1〜4歳","ages 1–4"],young:["5〜14歳","ages 5–14"],youth:["15〜29歳","ages 15–29"],mid:["30〜49歳","ages 30–49"],late:["50〜69歳","ages 50–69"],old:["70歳以上","age 70+"]};
+/* 性別による倍率 [男性, 女性] */
+const SEXMUL={"妊娠・出産の合併症":[0,2],"子宮頸がん":[0,2],"乳がん":[.02,1.98],"前立腺がん":[2,0],"自殺":[1.5,.5],"交通事故":[1.5,.5],
+  "他殺・暴力":[1.6,.4],"紛争・戦争":[1.6,.4],"薬物の過剰摂取":[1.4,.6],"肝硬変":[1.4,.6],"肺がん":[1.3,.7],"溺水":[1.3,.7],"認知症":[.7,1.3],"老衰":[.7,1.3]};
+function causeOf(age,k,sex){
+  const band=age<1?"infant":age<5?"child":age<15?"young":age<30?"youth":age<50?"mid":age<70?"late":"old";
+  const d=clamp((k.e0-55)/29,0,1), si=sex==="m"?0:1;
+  const pk=pickWeighted(CAUSES[band],([n,p,r])=>{let w=p*(1-d)+r*d; if(n==="老衰"&&age>=90) w*=3; return w*(SEXMUL[n]?SEXMUL[n][si]:1);});
+  return {...pk,band,d};
+}
+
+/* ---------- 人生の出来事と生涯収入 ---------- */
+/* 国ごとの [1人あたりGDP(ドル), ジニ係数, 合計特殊出生率]  2023年前後の世界銀行・国連の値をもとにした概算 */
+const ECON={"インド":[2500,35,2.0],"中国":[12600,37,1.0],"ナイジェリア":[1600,35,5.1],"パキスタン":[1400,30,3.4],"コンゴ民主共和国":[650,45,6.1],
+ "インドネシア":[4900,38,2.1],"エチオピア":[1300,35,4.0],"アメリカ":[81000,41,1.6],"バングラデシュ":[2500,33,1.9],"ブラジル":[10000,52,1.6],"タンザニア":[1200,40,4.6],
+ "エジプト":[3500,32,2.8],"フィリピン":[3800,40,1.9],"メキシコ":[13800,45,1.8],"ウガンダ":[1000,43,4.4],"ケニア":[2000,39,3.2],"アフガニスタン":[400,30,4.8],
+ "ベトナム":[4300,36,1.9],"スーダン":[1000,34,4.4],"アンゴラ":[2300,51,5.1],"ロシア":[13800,36,1.4],"イラク":[5800,30,3.3],"イラン":[4500,35,1.7],
+ "南アフリカ":[6000,63,2.3],"モザンビーク":[600,54,4.6],"ニジェール":[600,37,6.1],"トルコ":[13000,44,1.5],"コートジボワール":[2700,37,4.3],"カメルーン":[1700,47,4.3],
+ "マリ":[900,36,5.8],"マダガスカル":[500,43,3.7],"イエメン":[600,37,3.6],"ガーナ":[2200,44,3.4],"ウズベキスタン":[2500,31,3.3],"ミャンマー":[1200,31,2.1],
+ "ブルキナファソ":[850,47,4.6],"ソマリア":[600,37,6.1],"アルジェリア":[5300,28,2.7],"チャド":[700,37,6.0],"日本":[34000,33,1.2],"ドイツ":[53000,32,1.4],
+ "イギリス":[49000,33,1.5],"フランス":[46000,31,1.7],"マラウイ":[600,39,3.8],"ザンビア":[1300,57,4.1],"モロッコ":[3700,40,2.3],"サウジアラビア":[33000,45,2.4],
+ "ネパール":[1400,30,2.0],"セネガル":[1700,36,4.3],"タイ":[7200,35,1.2],"コロンビア":[6900,55,1.6],"ギニア":[1500,30,4.3],"ペルー":[7800,40,2.1],
+ "アルゼンチン":[13700,41,1.4],"ベナン":[1400,34,4.8],"ジンバブエ":[2100,50,3.4],"シリア":[1000,38,2.7],"ベネズエラ":[3800,45,2.2],"マレーシア":[11600,41,1.6],
+ "カザフスタン":[13100,29,3.0],"南スーダン":[400,44,4.4],"ルワンダ":[1000,44,3.7],"イタリア":[39000,35,1.2],"グアテマラ":[5800,48,2.3],"カンボジア":[2000,31,2.3],
+ "カナダ":[53000,32,1.3],"北朝鮮":[1000,35,1.8],"スペイン":[33000,34,1.2],"オーストラリア":[64000,34,1.6],"ハイチ":[1700,41,2.7],"ポーランド":[22000,29,1.2],
+ "スリランカ":[3800,38,2.0],"韓国":[33000,32,0.72],"パプアニューギニア":[3000,42,3.1],"ウクライナ":[5100,26,1.0],"チリ":[17000,43,1.2],"イスラエル":[53000,38,2.9],
+ "ラオス":[2000,39,2.4],"オランダ":[62000,26,1.4],"チュニジア":[3900,34,1.8],"台湾":[32000,34,0.87],"スウェーデン":[56000,30,1.45],"アラブ首長国連邦":[50000,26,1.4],
+ "キューバ":[9500,40,1.4],"ポルトガル":[27000,33,1.4],"スイス":[100000,33,1.4],"モンゴル":[5000,31,2.7],"ギリシャ":[22000,33,1.3],"ニュージーランド":[48000,33,1.6],
+ "フィンランド":[53000,27,1.26],"アイスランド":[78000,26,1.6],"ツバル":[5500,39,3.0]};
+const LOW_FLFP=new Set(["中東","北アフリカ","南アジア"]); // 女性の就業率がとくに低い地域
+const CONFLICT=new Set(["スーダン","南スーダン","コンゴ民主共和国","ソマリア","イエメン","シリア","ウクライナ","ミャンマー","アフガニスタン","マリ","ブルキナファソ","ナイジェリア","エチオピア","ハイチ","ニジェール","チャド"]);
+const HAZARD=new Set(["日本","フィリピン","バングラデシュ","インドネシア","中国","インド","パキスタン","ベトナム","ハイチ","ネパール","メキシコ","ミャンマー","トルコ","イラン","モザンビーク","マダガスカル","チリ","ニュージーランド","台湾","パプアニューギニア"]);
+/* 移住先：世界の移民が多く暮らす国（百万人） */
+const DEST=[["アメリカ","United States",51],["ドイツ","Germany",16],["サウジアラビア","Saudi Arabia",13],["ロシア","Russia",12],["イギリス","United Kingdom",9.4],
+  ["アラブ首長国連邦","United Arab Emirates",8.7],["フランス","France",8.5],["カナダ","Canada",8],["オーストラリア","Australia",7.7],["スペイン","Spain",6.8]];
+const YEN=150; // 1ドル=150円で換算
+
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t1=1/(1+.3275911*x);return s*(1-(((((1.061405429*t1-1.453152027)*t1)+1.421413741)*t1-.284496736)*t1+.254829592)*t1*Math.exp(-x*x));}
+const Phi=z=>.5*(1+erf(z/Math.SQRT2));
+function PhiInv(p){let lo=-8,hi=8;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(Phi(m)<p)lo=m;else hi=m;}return (lo+hi)/2;}
+function poisson(l){const L0=Math.exp(-l);let k=0,p=1;do{k++;p*=Math.random();}while(p>L0);return k-1;}
+
+/* 出来事：年齢つきの判定。その年齢まで生きていない場合は判定しない */
+function drawEvents(k,sex,death){
+  const d=clamp((k.e0-55)/29,0,1), [gdp,gini,tfr]=ECON[k.name], E=[];
+  const add=(id,p,age,extra={})=>{const alive=death>=age, r=Math.random(); const ev={id,p,age,alive,happened:alive&&r<p,...extra}; E.push(ev); return ev;};
+  const twinP=["西アフリカ","中部アフリカ"].includes(k.region)?.025:k.region==="東アジア"?.008:.014;
+  add("twin",twinP,0);
+  const school=add("school",.55+.45*d,12);
+  const uni=school.happened?add("uni",.04+.5*d**1.5,22):null;
+  const mAge=clamp(21+9*d-(sex==="f"?2:0)+randn()*3.5,16,45);
+  const marry=add("marry",.93-.2*d,mAge);
+  // 子ども：結婚していれば 出生率×0.95÷結婚する確率、していなければ出生率×0.1 を平均とするポアソン分布
+  if(death>=18){
+    const lam=marry.happened?tfr*.95/(.93-.2*d):tfr*.1, n=poisson(lam), ages=[];
+    let a0=marry.happened?mAge+1+Math.random()*2:22+Math.random()*10;
+    for(let i=0;i<n;i++){ if(a0<=Math.min(death,sex==="f"?45:55)) ages.push(a0); a0+=1.5+Math.random()*3; }
+    E.push({id:"kids",lam,n,ages,happened:ages.length>0,alive:true,p:1-Math.exp(-lam),age:ages[0]??99});
+  }
+  const dests=DEST.filter(x=>x[0]!==k.name);
+  add("migrate",.035,18+Math.random()*22,{dest:pickWeighted(dests,x=>x[2]).item});
+  add("conflict",CONFLICT.has(k.name)?.35:.02,Math.random()*death);
+  add("disaster",HAZARD.has(k.name)?.35:.12,Math.random()*death);
+  add("lightning",1/15300*Math.min(death,80)/80,10+Math.random()*Math.max(0,death-10));
+  add("billion",1/3e6,40+Math.random()*30);
+  return {E,school,uni,d};
+}
+const EV_NAME={twin:["双子として生まれる","Born a twin"],school:["小学校を卒業","Finished primary school"],uni:["大学を卒業","Graduated from university"],
+  marry:["結婚","Got married"],kids:["子どもが生まれる","Had children"],migrate:["海外へ移住","Emigrated"],conflict:["紛争に巻き込まれる","Caught up in armed conflict"],
+  disaster:["大きな自然災害で被災","Hit by a major natural disaster"],lightning:["雷に打たれる","Struck by lightning"],billion:["億万長者になる","Became a billionaire"]};
+
+/* 職業：[名前, 英名, 低所得国での重み, 高所得国での重み, 給与の倍率, 必要な学歴(0なし/1小学校/2大学), 性別の倍率[男,女], 手仕事か]
+   ILOの就業構造（低所得国は農業が過半、高所得国はサービス・専門職が中心）をもとにした概算 */
+const JOBS=[
+ ["農業・漁業","Farming or fishing",55,2,.5,0,[1,1],1],["露店・小売の販売員","Street or shop vendor",12,10,.7,0,[.9,1.1],1],
+ ["建設作業員","Construction worker",6,7,.9,0,[1.8,.2],1],["工場の作業員","Factory worker",6,10,.9,0,[1.1,.9],1],
+ ["運転手（トラック・バイク・タクシー）","Driver (truck, motorbike, taxi)",4,5,.9,0,[1.9,.1],1],["家事代行・清掃員","Domestic worker or cleaner",5,6,.6,0,[.3,1.7],1],
+ ["職人（大工・仕立て・修理）","Craftsperson (carpentry, tailoring, repair)",6,6,.9,0,[1.2,.8],1],["飲食・接客","Food service or hospitality",4,9,.7,0,[.8,1.2],1],
+ ["鉱山労働者","Miner",1,.2,1,0,[1.9,.1],1],["警察官・兵士","Police officer or soldier",1.5,2,1.1,1,[1.7,.3],0],
+ ["事務職","Office clerk",1,11,1.1,1,[.6,1.4],0],["看護師・介護士","Nurse or care worker",1,7,1,1,[.3,1.7],0],
+ ["経営者・起業家","Business owner or entrepreneur",3,4,1.6,0,[1.3,.7],0],["営業・ビジネスの専門職","Sales or business professional",.5,7,1.4,1,[1.1,.9],0],
+ ["会社の管理職","Manager",.5,6,2,1,[1.3,.7],0],["教師","Teacher",1.5,5,1.2,2,[.7,1.3],0],
+ ["エンジニア・IT技術者","Engineer or IT specialist",.3,6,1.8,2,[1.6,.4],0],["医師","Doctor",.1,.8,3,2,[1,1],0],
+ ["研究者","Researcher",.02,.4,1.5,2,[1.1,.9],0],["芸術家・スポーツ選手","Artist or athlete",.3,1,1,0,[1.1,.9],0]
+];
+const HOME=[["主に家事・育児・介護（無償の仕事）","Mostly unpaid work at home (housework, childcare, caregiving)"],["仕事に就けない時期が長かった","Long stretches without paid work"]];
+const jobName=j=>t(j[0],j[1]);
+
+/* 生涯収入 = 平均年収 × 性別 × 学歴 × 職業 × 個人差 × 働いた年数 × 働けた割合 */
+function drawEarnings(k,sex,death,ev){
+  const [gdp,gini]=ECON[k.name], d=ev.d, uni=!!(ev.uni&&ev.uni.happened), school=ev.school.happened;
+  const base=gdp*.85;
+  const gap=sex==="f"?.8:1;
+  const edu=uni?1.25:school?1:.8;
+  const level=uni?2:school?1:0;
+  const start=uni?22:school?18:14, end=Math.min(Math.floor(death),65), years=Math.max(0,end-start);
+  // 主に働いたかどうか：就業率で判定
+  const part=sex==="m"?.9:LOW_FLFP.has(k.region)?.3:.6+.15*d, u=Math.random(), works=u<part;
+  // 職業：1人あたりGDP（$800〜$50,000 を対数で0〜1に）で重みを混ぜ、学歴と性別で調整
+  const si=sex==="m"?0:1, dj=clamp(Math.log(gdp/800)/Math.log(50000/800),0,1);
+  const jw=j=>{let w=j[2]*(1-dj)+j[3]*dj; if(j[5]>level) w*=j[5]===2&&level===1?.05:0; if(level===2) w*=j[7]?.3:j[5]===2?4:1.5; return w*j[6][si];};
+  const pj=pickWeighted(JOBS,jw), avg=JOBS.reduce((s,j)=>s+jw(j)*j[4],0)/pj.total, occ=pj.item[4]/avg;
+  const sigma=Math.SQRT2*PhiInv((gini/100+1)/2)*.8, z=randn(), indiv=Math.exp(sigma*z-sigma*sigma/2);
+  const share=works?.9:.1; // 働いた人も失業・休職で1割は働かない／働かなかった人も1割は働く
+  const annual=base*gap*edu*(works?occ:.6)*indiv, total=annual*share*years;
+  return {gdp,gini,base,gap,part,u,works,edu,pj,dj,occ,sigma,z,indiv,start,end,years,share,annual,total,top:1-Phi(z),home:HOME[sex==="f"?0:1]};
+}
+function rankText(top,cn){
+  return top<=.5 ? t(`${cn}の働く人の中で上位 ${pct(top)}`,`top ${pct(top)} of workers in ${cn}`) : t(`${cn}の働く人の中で下位 ${pct(1-top)}`,`bottom ${pct(1-top)} of workers in ${cn}`);
+}
+function money(usd,big){
+  if(usd<1) return t("0円","$0");
+  const yen=usd*YEN;
+  return big
+    ? t(`約${fmtN(yen)}円<span class="note">約${fmtN(usd)}ドル（1ドル=${YEN}円）</span>`,`about $${fmtN(usd)}<span class="note">about ¥${fmtN(yen,false)} (at ¥${YEN} per dollar)</span>`)
+    : t(`約${fmtN(yen)}円（約${fmtN(usd)}ドル）`,`about $${fmtN(usd,false)} (¥${fmtN(yen,false)})`);
+}
+function evAgeLabel(a){return a<1?t("誕生","Birth"):t(Math.floor(a)+"歳","Age "+Math.floor(a));}
+function timeline(rec){
+  const {ev}=rec, items=[];
+  for(const e of ev.E){
+    if(e.id==="kids"){ e.ages.forEach((a,i)=>items.push([a,t(`第${i+1}子が誕生`,`Child #${i+1} born`)])); continue; }
+    if(e.id==="school"&&e.alive&&!e.happened){ items.push([12,t("小学校を卒業できなかった","Did not finish primary school")]); continue; }
+    if(!e.happened) continue;
+    let label=t(...EV_NAME[e.id]);
+    if(e.id==="migrate") label=t(e.dest[0]+"へ移住","Moved to "+e.dest[1]);
+    items.push([e.age,label]);
+  }
+  const inc=rec.inc;
+  if(inc&&inc.works&&inc.years>0) items.push([inc.start,t(jobName(inc.pj.item)+"として働き始める","Started work: "+jobName(inc.pj.item))]);
+  items.sort((a,b)=>a[0]-b[0]);
+  if(!items.length) return `<span class="note">${t("大きな出来事はありませんでした","No major life events")}</span>`;
+  return `<ol class="events">`+items.map(([a,l])=>`<li><span>${evAgeLabel(a)}</span><span>${l}</span></li>`).join("")+`</ol>`;
+}
+function eventTable(rec){
+  return `<div class="cands evt">`+rec.ev.E.map(e=>{
+    let res;
+    if(e.id==="kids") res=e.ages.length?t(e.ages.length+"人",e.ages.length+(e.ages.length===1?" child":" children")):t("いない","none");
+    else if(!e.alive) res=t("その年齢まで生きなかった","didn't live that long");
+    else res=e.happened?t("起きた","happened"):t("起きなかった","didn't happen");
+    const name=e.id==="kids"?t(`子ども（平均 ${e.lam.toFixed(1)}人）`,`Children (average ${e.lam.toFixed(1)})`):t(...EV_NAME[e.id]);
+    const p=e.p>=.001?pct(e.p):prob(e.p);
+    return `<div class="${e.happened?"hit":""}"><span>${name}<small>${t("確率","chance")} ${p}</small></span><span>${res}</span></div>`;
+  }).join("")+`</div>`;
+}
+
+/* ---------- 生命転生：地球上の推定個体数（研究によって桁が変わる概算） ---------- */
+const GROUP_EN={"ウイルス":"Virus","細菌":"Bacteria","古細菌":"Archaea","単細胞生物":"Single-celled","単細胞の藻":"Single-celled alga","菌類":"Fungi","植物":"Plant",
+  "甲殻類":"Crustacean","線形動物":"Nematode","昆虫":"Insect","クモの仲間":"Arachnid","六脚類":"Hexapod","魚類":"Fish","鳥類":"Bird","哺乳類":"Mammal"};
+/* [名前, 英名, 分類, 種別, 推定個体数, 説明, 英語の説明, 一生, 英語の一生] */
+const L=[
+ ["バクテリオファージ","Bacteriophage","ウイルス","virus",1e31,"細菌に感染するウイルス。海水1滴に約10,000,000個","A virus that infects bacteria. About 10,000,000 (10 million) in one drop of seawater","数日〜数週間（感染力を保つ期間）","Days to weeks (while still infectious)"],
+ ["地下深くの細菌","Deep subsurface bacteria","細菌","prok",5e29,"地下数kmの岩の中で、ほとんど分裂せずに生きる","Live in rock kilometers underground, barely ever dividing","数百〜数千年に一度の分裂","Divide once every hundreds to thousands of years"],
+ ["土の中の細菌","Soil bacteria","細菌","prok",3e29,"ひとつまみの土に何十億匹もいる","Billions in a single pinch of soil","数時間〜数日で分裂","Divide every few hours to days"],
+ ["古細菌","Archaea","古細菌","prok",2e29,"温泉、深海、ウシの胃の中などに暮らす","Live in hot springs, the deep sea and cow stomachs","数時間〜数週間で分裂","Divide every few hours to weeks"],
+ ["海の細菌","Marine bacteria","細菌","prok",1e29,"海の栄養をぐるぐる回している","Keep the ocean's nutrients cycling","数日で分裂","Divide every few days"],
+ ["プロクロロコッカス","Prochlorococcus","細菌","prok",3e27,"地球最小級の光合成生物。酸素の一部をつくる","One of Earth's smallest photosynthesizers; makes part of our oxygen","約1日で分裂","Divide about once a day"],
+ ["人の腸内細菌","Human gut bacteria","細菌","prok",3e23,"人ひとりの腸に約40,000,000,000,000匹","About 40,000,000,000,000 (40 trillion) in one person's gut","数時間〜数日で分裂","Divide every few hours to days"],
+ ["アメーバなどの原生生物","Amoebae and other protists","単細胞生物","euk",1e26,"土や水の中で細菌を食べて暮らす","Eat bacteria in soil and water","数日〜数週間で分裂","Divide every few days to weeks"],
+ ["珪藻","Diatom","単細胞の藻","euk",1e25,"ガラスの殻をもつ藻。地球の酸素の約2割をつくる","Algae in glass shells; make about 20% of Earth's oxygen","約1週間で分裂","Divide about once a week"],
+ ["円石藻","Coccolithophore","単細胞の藻","euk",1e24,"石灰の鱗をまとう藻。白亜の崖のもと","Algae armored in chalk plates; the stuff of white cliffs","数日で分裂","Divide every few days"],
+ ["カビ・キノコなどの菌類","Molds, mushrooms and other fungi","菌類","fungi",1e22,"森の落ち葉を土に還す。数え方で桁が大きく変わる","Turn fallen leaves back into soil. Counts vary hugely by method","数週間〜数千年（巨大な菌糸体）","Weeks to thousands of years (giant mycelia)"],
+ ["コケ","Moss","植物","plant",1e16,"岩や木の幹に張りつく、陸上植物の先輩","Clings to rocks and tree trunks; one of the first land plants","数年〜数十年","Years to decades"],
+ ["草","Grass","植物","plant",1e15,"草原の主役","The star of every grassland","数か月〜数年","Months to years"],
+ ["樹木","Tree","植物","plant",3e12,"地球の陸地の約3割をおおう森をつくる","Form forests covering about 30% of Earth's land","数十年〜数千年","Decades to thousands of years"],
+ ["カイアシ類","Copepod","甲殻類","inv",1e21,"米粒より小さな海のプランクトン。魚のごはん","Ocean plankton smaller than a grain of rice; fish food","数か月〜1年","Months to a year"],
+ ["線虫","Nematode","線形動物","inv",4.4e20,"土の中で最も数が多い動物（2019年の推計）","The most numerous animal in soil (2019 estimate)","数週間","A few weeks"],
+ ["その他の昆虫","Other insects","昆虫","inv",1e19,"甲虫、ハエ、チョウ、カメムシなど","Beetles, flies, butterflies, true bugs and more","数週間〜数年","Weeks to years"],
+ ["ダニ","Mite","クモの仲間","inv",1e18,"土の中にびっしりいる","Packed densely in soil","数週間〜数か月","Weeks to months"],
+ ["トビムシ","Springtail","六脚類","inv",1e18,"土の表面で跳ねる、昆虫に近い小さな虫","Tiny insect-like hoppers on the soil surface","数か月〜1年","Months to a year"],
+ ["シロアリ","Termite","昆虫","inv",1e17,"木を食べて巨大な塚をつくる","Eat wood and build giant mounds","働きアリで1〜2年","1–2 years for a worker"],
+ ["アリ","Ant","昆虫","inv",2e16,"全部の重さは野生の鳥と哺乳類の合計より重い（2022年の推計）","Together they outweigh all wild birds and mammals combined (2022 estimate)","働きアリで数か月〜1年","Months to a year for a worker"],
+ ["クモ","Spider","クモの仲間","inv",2.5e15,"年に数億トンの虫を食べる","Eat hundreds of millions of tons of insects a year","1〜2年","1–2 years"],
+ ["ナンキョクオキアミ","Antarctic krill","甲殻類","inv",5e14,"南極海で大群をつくる。クジラのごはん","Swarm in the Southern Ocean; whale food","5〜6年","5–6 years"],
+ ["蚊","Mosquito","昆虫","inv",1.1e14,"人類の天敵","Humanity's deadliest foe","数週間","A few weeks"],
+ ["ミツバチ（飼育）","Honeybee (managed)","昆虫","inv",2e12,"世界の約100,000,000の巣箱で暮らす","Live in about 100,000,000 (100 million) hives worldwide","働きバチで約1か月","About a month for a worker"],
+ ["ヨコエソ","Bristlemouth","魚類","vert",1e15,"深海に住む、地球で最も数が多い脊椎動物とされる魚","A deep-sea fish thought to be Earth's most numerous vertebrate","1〜2年","1–2 years"],
+ ["その他の魚","Other fish","魚類","vert",3.5e12,"イワシからマグロまで","From sardines to tuna","数年〜数十年","Years to decades"],
+ ["ジンベエザメ","Whale shark","魚類","vert",1.5e5,"世界最大の魚。プランクトンを吸い込んで食べる","The largest fish; feeds by sucking in plankton","約80年以上","80+ years"],
+ ["シーラカンス","Coelacanth","魚類","vert",1e3,"約400,000,000年前から姿を変えない「生きた化石」","A 'living fossil' unchanged for about 400,000,000 (400 million) years","約100年","About 100 years"],
+ ["その他の野鳥","Other wild birds","鳥類","vert",4.6e10,"スズメ、カラス、ハトなど（2021年の推計）","Sparrows, crows, pigeons and more (2021 estimate)","数年〜数十年","Years to decades"],
+ ["イエスズメ","House sparrow","鳥類","vert",1.6e9,"世界で最も数が多い野鳥とされる","Thought to be the world's most numerous wild bird","約3年","About 3 years"],
+ ["ホシムクドリ","Common starling","鳥類","vert",1.3e9,"数万羽の大群で空に模様を描く","Flocks of tens of thousands paint patterns in the sky","約2〜3年","About 2–3 years"],
+ ["ツバメ","Barn swallow","鳥類","vert",1.1e9,"毎年、大陸をまたいで渡る","Migrates between continents every year","約4年","About 4 years"],
+ ["ニワトリ","Chicken","鳥類","vert",2.6e10,"人間の約3倍いる","About 3 for every human","肉用は約50日","About 50 days (broilers)"],
+ ["アヒル","Domestic duck","鳥類","vert",1.1e9,"多くがアジアで飼われている","Mostly raised in Asia","肉用は約2か月","About 2 months (meat ducks)"],
+ ["ペンギン（全種）","Penguins (all species)","鳥類","vert",2e7,"南半球の海で暮らす飛べない鳥","Flightless birds of the southern oceans","約15〜20年","About 15–20 years"],
+ ["ハクトウワシ","Bald eagle","鳥類","vert",3e5,"アメリカの国鳥","National bird of the United States","約20年","About 20 years"],
+ ["カカポ","Kākāpō","鳥類","vert",250,"ニュージーランドの飛べないオウム。全個体に名前がある","New Zealand's flightless parrot. Every single bird has a name","約60年以上","60+ years"],
+ ["人間","Human","哺乳類","vert",8.2e9,"いまのあなたと同じ種","The same species you are now","約73年","About 73 years"],
+ ["ウシ","Cattle","哺乳類","vert",1.5e9,"牛乳と牛肉のために世界中で飼われている","Raised worldwide for milk and beef","肉用は約2年","About 2 years (beef cattle)"],
+ ["ヒツジ","Sheep","哺乳類","vert",1.3e9,"毛と肉と乳を人に提供している","Give us wool, meat and milk","約10年","About 10 years"],
+ ["ヤギ","Goat","哺乳類","vert",1.1e9,"世界中の農村で飼われている","Kept in farming villages worldwide","約15年","About 15 years"],
+ ["ブタ","Pig","哺乳類","vert",9.8e8,"中国だけで約400,000,000頭","About 400,000,000 (400 million) in China alone","肉用は約半年","About 6 months (pork)"],
+ ["イヌ","Dog","哺乳類","vert",9e8,"その多くは飼い主のいない犬","Most of them have no owner","約12年","About 12 years"],
+ ["ネコ","Cat","哺乳類","vert",6e8,"飼い猫と野良猫の合計","Pets and strays combined","約15年","About 15 years"],
+ ["ウマ","Horse","哺乳類","vert",6e7,"かつては人類の主な乗り物","Once humanity's main transport","約25年","About 25 years"],
+ ["スイギュウ","Water buffalo","哺乳類","vert",2e8,"アジアの水田で働く","Work the rice paddies of Asia","約25年","About 25 years"],
+ ["ラクダ","Camel","哺乳類","vert",3.5e7,"砂漠の運び屋","Haulers of the desert","約40年","About 40 years"],
+ ["カニクイザル","Crab-eating macaque","哺乳類","vert",3e6,"東南アジアのマングローブに暮らすサル","Monkeys of Southeast Asia's mangroves","約25年","About 25 years"],
+ ["ニホンザル","Japanese macaque","哺乳類","vert",1.5e5,"世界で最も北に住むサル。温泉に入ることも","The world's northernmost monkey. Some bathe in hot springs","約25年","About 25 years"],
+ ["チンパンジー","Chimpanzee","哺乳類","vert",3e5,"人間に最も近い親戚の一つ","One of humanity's closest relatives","約40年","About 40 years"],
+ ["ゴリラ","Gorilla","哺乳類","vert",3.6e5,"最大の霊長類","The largest primate","約40年","About 40 years"],
+ ["オランウータン","Orangutan","哺乳類","vert",1.2e5,"ボルネオとスマトラの森に暮らす","Live in the forests of Borneo and Sumatra","約45年","About 45 years"],
+ ["ボノボ","Bonobo","哺乳類","vert",2e4,"コンゴの森だけに暮らす平和的な類人猿","Peaceful apes found only in the Congo forests","約40年","About 40 years"],
+ ["キリン","Giraffe","哺乳類","vert",1.17e5,"アフリカのサバンナに暮らす","Live on the African savanna","約25年","About 25 years"],
+ ["ホッキョクグマ","Polar bear","哺乳類","vert",2.6e4,"北極の氷の上で狩りをする","Hunt on Arctic sea ice","約25年","About 25 years"],
+ ["ライオン","Lion","哺乳類","vert",2.3e4,"野生のものはアフリカとインドにだけ残る","Wild lions survive only in Africa and India","約12年","About 12 years"],
+ ["ゾウ","Elephant","哺乳類","vert",4.6e5,"陸上で最大の動物","The largest land animal","約60年","About 60 years"],
+ ["シロナガスクジラ","Blue whale","哺乳類","vert",1.5e4,"地球史上最大の動物","The largest animal that has ever lived","約80年","About 80 years"],
+ ["トラ","Tiger","哺乳類","vert",5.5e3,"野生のトラ。保護で少しずつ増えている","Wild tigers, slowly recovering thanks to protection","約15年","About 15 years"],
+ ["ジャイアントパンダ","Giant panda","哺乳類","vert",1.9e3,"中国の山地の竹林に暮らす","Live in the mountain bamboo forests of China","約20年","About 20 years"],
+ ["ジャワサイ","Javan rhino","哺乳類","vert",50,"ジャワ島の一つの国立公園にだけ残る","Survive in a single national park on Java","約40年","About 40 years"],
+ ["コガシラネズミイルカ（バキータ）","Vaquita","哺乳類","vert",10,"メキシコのカリフォルニア湾にだけ残る。最も絶滅に近い哺乳類","Found only in Mexico's Gulf of California. The world's most endangered mammal","約20年","About 20 years"]
+].map(([name,nameEn,group,kind,n,note,noteEn,life,lifeEn])=>({name,nameEn,group,kind,n,note,noteEn,life,lifeEn}));
+const lName=e=>t(e.name,e.nameEn);
+
+/* 見た目と大きさ：[代表的な大きさ(m), 絵, 測り方, Wikipedia検索語] */
+const LOOK={
+ "バクテリオファージ":[1e-7,"🦠"],"地下深くの細菌":[1e-6,"🦠",,"地下生物圏"],"土の中の細菌":[1e-6,"🦠",,"土壌細菌"],"古細菌":[1e-6,"🦠"],
+ "海の細菌":[6e-7,"🦠",,"海洋細菌"],"プロクロロコッカス":[6e-7,"🦠"],"人の腸内細菌":[2e-6,"🦠",,"腸内細菌"],"アメーバなどの原生生物":[1e-4,"🦠",,"アメーバ"],
+ "珪藻":[5e-5,"🦠"],"円石藻":[1e-5,"🦠"],"カビ・キノコなどの菌類":[.1,"🍄","mushroom","菌類"],"コケ":[.02,"🌱","height"],"草":[.3,"🌾","height"],"樹木":[15,"🌳","height"],
+ "カイアシ類":[1e-3,"🦐"],"線虫":[1e-3,"🪱",,"線形動物"],"その他の昆虫":[5e-3,"🪲",,"昆虫"],"ダニ":[5e-4,"🕷️"],"トビムシ":[2e-3,"🦗"],
+ "シロアリ":[6e-3,"🐜"],"アリ":[5e-3,"🐜"],"クモ":[1e-2,"🕷️"],"ナンキョクオキアミ":[.05,"🦐"],"蚊":[5e-3,"🦟"],"ミツバチ（飼育）":[1.3e-2,"🐝",,"セイヨウミツバチ"],
+ "ヨコエソ":[.05,"🐟"],"その他の魚":[.3,"🐟",,"魚類"],"ジンベエザメ":[12,"🦈"],"シーラカンス":[1.8,"🐟"],
+ "その他の野鳥":[.15,"🐦",,"鳥類"],"イエスズメ":[.15,"🐦"],"ホシムクドリ":[.21,"🐦"],"ツバメ":[.18,"🐦"],"ニワトリ":[.5,"🐔"],"アヒル":[.6,"🦆"],
+ "ペンギン（全種）":[.6,"🐧",,"ペンギン"],"ハクトウワシ":[.9,"🦅"],"カカポ":[.6,"🦜"],
+ "人間":[1.7,"🧍","stature"],"ウシ":[2.5,"🐄"],"ヒツジ":[1.3,"🐑"],"ヤギ":[1.3,"🐐"],"ブタ":[1.5,"🐖"],"イヌ":[.8,"🐕"],"ネコ":[.5,"🐈"],"ウマ":[2.4,"🐎"],
+ "スイギュウ":[2.8,"🐃"],"ラクダ":[3,"🐪"],"カニクイザル":[.45,"🐒"],"ニホンザル":[.55,"🐒"],"チンパンジー":[.9,"🐒"],"ゴリラ":[1.7,"🦍"],
+ "オランウータン":[1.4,"🦧"],"ボノボ":[.8,"🐒"],"キリン":[5,"🦒","height"],"ホッキョクグマ":[2.4,"🐻‍❄️"],"ライオン":[2.5,"🦁"],"ゾウ":[6,"🐘"],
+ "シロナガスクジラ":[25,"🐋"],"トラ":[2.8,"🐅"],"ジャイアントパンダ":[1.5,"🐼"],"ジャワサイ":[3.1,"🦏"],"コガシラネズミイルカ（バキータ）":[1.4,"🐬",,"コガシラネズミイルカ"]
+};
+const DIM={length:["体長","Length"],height:["高さ","Height"],stature:["身長","Height"],mushroom:["キノコ1本で","One mushroom"]};
+const look=e=>{const v=LOOK[e.name]||[null,"❔"];return {m:v[0],emoji:v[1],dim:DIM[v[2]||"length"],wiki:v[3]||e.name};};
+function fmtSize(m){
+  const r=x=>x>=10?Math.round(x):+x.toFixed(1);
+  if(m<1e-6) return r(m*1e9)+" nm"; if(m<1e-3) return r(m*1e6)+" µm"; if(m<1e-2) return r(m*1e3)+" mm"; if(m<1) return r(m*100)+" cm"; return r(m)+" m";
+}
+const REFS=[[["細菌1匹","a bacterium"],1e-6],[["赤血球","a red blood cell"],8e-6],[["髪の毛の太さ","the width of a hair"],8e-5],[["砂つぶ","a grain of sand"],1e-3],
+  [["米つぶ","a grain of rice"],5e-3],[["1円玉","a small coin"],2e-2],[["スマホ","a smartphone"],.15],[["大人の人間","an adult human"],1.7],[["路線バス","a city bus"],11],[["25mプール","a 25 m pool"],25]];
+function compare(m){
+  const [n,s]=REFS.reduce((b,r)=>Math.abs(Math.log(m/r[1]))<Math.abs(Math.log(m/b[1]))?r:b);
+  const x=m/s, nm=t(n[0],n[1]);
+  if(x>.67&&x<1.5) return t(nm+"くらい","About the size of "+nm);
+  return x>1 ? t(nm+"の約"+Math.round(x)+"倍","About "+Math.round(x)+"× "+nm) : t(nm+"の約1/"+Math.round(1/x),"About 1/"+Math.round(1/x)+" of "+nm);
+}
+const SCALE_MIN=-8,SCALE_MAX=3, pos=m=>(Math.log10(m)-SCALE_MIN)/(SCALE_MAX-SCALE_MIN)*100;
+const TICKS=[[["細菌","Bacterium"],1e-6],[["髪の太さ","Hair"],8e-5],[["米つぶ","Rice"],5e-3],[["スマホ","Phone"],.15],[["人","Human"],1.7],[["バス","Bus"],11]];
+function scaleBar(m){
+  return `<div class="scale" role="img" aria-label="${t("ウイルスからクジラまでの大きさのものさし上の位置","Position on a size scale from viruses to whales")}"><div class="track"></div>`+
+    TICKS.map(([n,s],i)=>`<span class="tick" style="left:${pos(s)}%"></span><span class="tl ${i%2?"lo":"hi"}" style="left:${pos(s)}%">${t(n[0],n[1])}</span>`).join("")+
+    `<span class="mk" style="left:${clamp(pos(m),0,100)}%"></span></div><span class="note scale-ends"><span>10 nm</span><span>1 km</span></span>`;
+}
+
+const PRIMATES=new Set(["人間","カニクイザル","ニホンザル","チンパンジー","ゴリラ","オランウータン","ボノボ"]);
+const SCOPE={
+  all:e=>e.kind!=="virus", multi:e=>["fungi","plant","inv","vert"].includes(e.kind), animal:e=>["inv","vert"].includes(e.kind),
+  vert:e=>e.kind==="vert", fish:e=>e.group==="魚類", bird:e=>e.group==="鳥類", mammal:e=>e.group==="哺乳類", primate:e=>PRIMATES.has(e.name)
+};
+const scopeLabel=s=>t(...SCOPE_NAME[s]);
+
+/* ---------- 状態 ---------- */
+let mode="life", rolls={human:0,life:0}, hist={human:[],life:[]}, current={human:null,life:null};
+const curScope=()=>document.querySelector('input[name="scope"]:checked').value;
+function pool(scope=curScope()){
+  return L.filter(e=>SCOPE[scope](e)||(scope==="all"&&e.kind==="virus"));
+}
+
+/* ---------- 抽選（結果は記録として保存し、言語を切り替えたら描き直す） ---------- */
+function drawHuman(){
+  const pc=pickWeighted(C,c=>c.births), k=pc.item;
+  const sx=sexOf(k), ps=pickWeighted(["m","f"],s=>s==="m"?sx.pm:1-sx.pm), sex=ps.item;
+  const a=sampleAge(k,sex), pd=causeOf(a.age,k,sex);
+  const ev=drawEvents(k,sex,a.age), inc=drawEarnings(k,sex,a.age,ev);
+  return {type:"human",k,pc,sx,ps,sex,a,pd,ev,inc,year:2026};
+}
+function drawLife(){
+  const scope=curScope(), P=[...pool(scope)].sort((a,b)=>b.n-a.n), pk=pickWeighted(P,x=>x.n);
+  return {type:"life",scope,P,pk};
+}
+
+/* ---------- 描画 ---------- */
+function row(label,html,i){return `<div class="row reveal" style="animation-delay:${i*.35}s"><dt>${label}</dt><dd>${html}</dd></div>`;}
+function step(title,body){return `<li><div><h3>${title}</h3>${body}</div></li>`;}
+function candList(pk,label,limit){
+  const max=Math.max(...pk.ws);
+  let list=pk.ws.map((w,i)=>({w,i})).filter(o=>o.w>0).sort((a,b)=>b.w-a.w);
+  if(limit){ const hit=list.find(o=>o.i===pk.idx); list=list.slice(0,limit); if(hit&&!list.includes(hit)) list.push(hit); }
+  return `<div class="cands">`+list.map(({w,i})=>{
+    const p=w/pk.total;
+    return `<div class="${i===pk.idx?"hit":""}"><span>${label(i)}<i><u style="width:${Math.max(.5,w/max*100)}%"></u></i></span><span>${p>=1e-5?pct(p):prob(p)}</span></div>`;
+  }).join("")+`</div>`;
+}
+
+function renderHuman(rec,animate){
+  const {k,pc,sx,ps,sex,a,pd,ev,inc,year}=rec, age=a.age, cause=pd.item[0], dy=year+Math.floor(age), cn=cName(k), band=t(...BANDS[pd.band]);
+  const incNote=inc.years>0
+    ? t(`働いていた年の年収 ${money(inc.annual)}`,`Yearly pay while working: ${money(inc.annual)}`)+" ・ "+rankText(inc.top,cn)
+    : t("働く年齢まで生きられませんでした","Did not live to working age");
+  $("result").innerHTML='<dl style="margin:0">'+
+    row(t("誕生","Born"),`<span class="big">${cn}</span><span class="note"><span class="tag">${rName(k)}</span>${t(year+"年生まれ","Born in "+year)} ・ ${t("確率","Odds")} ${prob(pc.p)}</span>`,0)+
+    row(t("性別","Sex"),`<span class="big">${sexName(sex)}</span><span class="note">${t("確率","Odds")} ${pct(ps.p)}</span>`,1)+
+    row(t("出来事","Events"),timeline(rec),2)+
+    (inc.years>0?row(t("職業","Work"),inc.works
+      ?`<span class="big mid">${jobName(inc.pj.item)}</span><span class="note">${t(`${inc.start}歳〜${inc.end}歳 ・ 同じ国・学歴・性別でこの仕事に就く確率 ${pct(inc.pj.p)}`,`Ages ${inc.start}–${inc.end} ・ chance of this job for the same country, education and sex: ${pct(inc.pj.p)}`)}</span>`
+      :`<span class="big mid">${t(...inc.home)}</span><span class="note">${t(`お金をもらう仕事を主にしない確率 ${pct(1-inc.part)}`,`Chance of not mainly doing paid work: ${pct(1-inc.part)}`)}</span>`,3):"")+
+    row(t("生涯収入","Earnings"),`<span class="big">${money(inc.total,true)}</span><span class="note">${incNote}</span>`,4)+
+    row(t("寿命","Lifespan"),`<span class="big">${ageText(age)}</span><span class="note">${t(dy+"年に没","Died in "+dy)} ・ ${t(cn+"の"+sexName(sex)+"の平均寿命 約"+a.e0.toFixed(1)+"歳","Life expectancy for "+sexPl(sex)+" in "+cn+": about "+a.e0.toFixed(1)+" years")}</span>`,5)+
+    row(t("死因","Cause"),`<span class="big">${causeName(cause)}</span><span class="note">${t(band+"の"+sexName(sex)+"の死因のうち ","Share among deaths of "+sexPl(sex)+" at "+band+": ")}${pct(pd.p)}</span>`,6)+'</dl>';
+  if(!animate) $("result").querySelectorAll(".reveal").forEach(el=>el.classList.remove("reveal"));
+
+  const lifeLine = a.early
+    ? `<span class="formula">${t(`乱数 <b>${num(a.u1)}</b> &lt; ${num(a.q5)} なので、5歳になる前に亡くなる`,`Random number <b>${num(a.u1)}</b> &lt; ${num(a.q5)}, so death comes before age 5`)}</span>`
+    : `<span class="formula">${t(`乱数 <b>${num(a.u1)}</b> ≧ ${num(a.q5)} なので、5歳を超えて生きる`,`Random number <b>${num(a.u1)}</b> ≥ ${num(a.q5)}, so you live past age 5`)}</span>
+       <p>${t(`5歳以降は、年をとるほど死亡率が指数的に上がるモデル（ゴンペルツ・メイカム型）で寿命を決めます。${cn}の${sexName(sex)}の平均寿命 約${a.e0.toFixed(1)}歳に合うよう、死亡のピークを <b>${a.M.toFixed(1)}歳</b> に調整しています。`,
+        `After age 5, lifespan follows a model in which the death rate rises exponentially with age (Gompertz–Makeham). The peak age of death is tuned to <b>${a.M.toFixed(1)} years</b> to match the life expectancy of about ${a.e0.toFixed(1)} years for ${sexPl(sex)} in ${cn}.`)}</p>
+       <span class="formula">${t(`2つめの乱数 <b>${num(a.u2)}</b> → 生存曲線上で ${ageText(age)} に対応`,`Second random number <b>${num(a.u2)}</b> → ${ageText(age)} on the survival curve`)}</span>`;
+  const births=fmtN(k.births*1000), total=fmtN(birthsTotal*1000);
+  $("steps").innerHTML=
+    step(t("生まれる国","Country of birth"),`<p>${t("今年の世界の出生数のうち、その国で生まれる赤ちゃんの割合が確率になります。","The chance is the country's share of this year's births worldwide.")}</p>
+      <span class="formula">${t(`${cn}の年間出生数 約${births}人 ÷ 掲載${C.length}か国の合計 約${total}人`,`Annual births in ${cn}: about ${births} ÷ total for the ${C.length} listed countries: about ${total}`)} = <b>${pct(pc.p)}</b></span>
+      <span class="formula">${draw(pc)} → ${cn}</span>`)+
+    step(t("性別","Sex"),`<p>${t(`出生性比（女の子100人に対する男の子の数）から決まります。${cn}は女100 : 男${sx.srb}${sx.srb>106?"で、男の子が多めに生まれる国です":""}。`,
+        `Set by the sex ratio at birth (boys born per 100 girls). ${cn}: ${sx.srb} boys per 100 girls${sx.srb>106?", so noticeably more boys are born":""}.`)}</p>
+      <span class="formula">${t("男性","Male")} ${sx.srb}÷${sx.srb+100} = ${pct(sx.pm)} ／ ${t("女性","Female")} 100÷${sx.srb+100} = ${pct(1-sx.pm)}</span>
+      <span class="formula">${draw(ps)} → <b>${sexName(sex)}</b></span>`)+
+    step(t("寿命","Lifespan"),`<p>${t(`まず5歳までに亡くなるかを判定します。${cn}の${sexName(sex)}の5歳未満死亡率は ${(a.q5*1000).toFixed(1)}‰（${pct(a.q5)}）です。`,
+        `First we check whether death comes before age 5. Under-5 mortality for ${sexPl(sex)} in ${cn} is ${(a.q5*1000).toFixed(1)} per 1,000 (${pct(a.q5)}).`)}</p>
+      ${lifeLine}
+      <p>${t(`同じ国・性別の人のうち、この年齢より前に亡くなるのは約 <b>${pct(a.cdf)}</b>、これより長生きするのは約 ${pct(1-a.cdf)} です。`,
+        `Among people of the same country and sex, about <b>${pct(a.cdf)}</b> die before this age and about ${pct(1-a.cdf)} live longer.`)}</p>`)+
+    step(t("死因","Cause of death"),`<p>${t(`${band}で亡くなった${sexName(sex)}の主な死因から選びます。重みは「平均寿命が低い国の傾向」と「高い国の傾向」を、${cn}の平均寿命で混ぜたもの（高い国寄り ${Math.round(pd.d*100)}%）に、性別の倍率をかけています。`,
+        `Picked from the main causes of death for ${sexPl(sex)} who die at ${band}. The weights blend the pattern in low-life-expectancy countries with the pattern in high ones, using ${cn}'s life expectancy (${Math.round(pd.d*100)}% toward high), then apply a multiplier for sex.`)}</p>
+      ${candList(pd,i=>causeName(CAUSES[pd.band][i][0]))}
+      <span class="formula">${draw(pd)} → <b>${causeName(cause)}</b></span>`)+
+    step(t("人生の出来事","Life events"),`<p>${t(
+        `出来事ごとに乱数を1つ引き、確率より小さければ起きたことにします。確率は${cn}の平均寿命から見た国の豊かさ（高い国寄り ${Math.round(ev.d*100)}%）や、紛争・災害の多さで変わります。年齢が決まっている出来事は、その年齢まで生きている場合だけ判定します。`,
+        `Each event gets its own random number; if it is below the chance, the event happens. Chances depend on how developed ${cn} is, judged by its life expectancy (${Math.round(ev.d*100)}% toward high), and on how prone it is to conflict and disasters. Events tied to an age are only checked if you live that long.`)}</p>
+      ${eventTable(rec)}
+      <p>${t(`子どもの数は、${cn}の合計特殊出生率 ${ECON[k.name][2]} をもとにしたポアソン分布で決めます。`,`The number of children comes from a Poisson distribution based on ${cn}'s total fertility rate of ${ECON[k.name][2]}.`)}</p>`)+
+    (inc.years>0?step(t("職業","Work"),`<p>${t(
+        `まず、お金をもらう仕事を主にするかを就業率で判定します。${cn}の${sexName(sex)}は ${pct(inc.part)} です。`,
+        `First we check whether paid work is your main activity, using the employment rate: ${pct(inc.part)} for ${sexPl(sex)} in ${cn}.`)}</p>
+      <span class="formula">${t(`乱数 <b>${num(inc.u)}</b> ${inc.works?"&lt;":"≧"} ${num(inc.part)} なので、${inc.works?"主に働く":"主には働かない"}`,`Random number <b>${num(inc.u)}</b> ${inc.works?"&lt;":"≥"} ${num(inc.part)}, so ${inc.works?"paid work is your main activity":"paid work is not your main activity"}`)}</span>
+      ${inc.works?`<p>${t(
+        `職業は、低所得国と高所得国の就業構造を${cn}の1人あたりGDP $${fmtN(inc.gdp)}（高所得国寄り ${Math.round(inc.dj*100)}%）で混ぜ、学歴と性別の偏りをかけた重みで選びます。${inc.edu>1?"大卒なので専門職が選ばれやすくなっています。":inc.edu<1?"小学校を出ていないので、学歴が必要な仕事は候補から外れます。":"大卒が必要な仕事はほとんど選ばれません。"}`,
+        `Jobs are weighted by blending the job mix of low- and high-income countries according to ${cn}'s GDP per person of $${fmtN(inc.gdp)} (${Math.round(inc.dj*100)}% toward high-income), then adjusting for education and sex. ${inc.edu>1?"With a degree, professional jobs are more likely.":inc.edu<1?"Without primary school, jobs that need schooling are ruled out.":"Jobs that need a degree are rarely picked."}`)}</p>
+      ${candList(inc.pj,i=>jobName(JOBS[i]),8)}
+      <span class="formula">${draw(inc.pj)} → <b>${jobName(inc.pj.item)}</b></span>`:""}`):"")+
+    step(t("生涯収入","Lifetime earnings"),inc.years>0?`<p>${t(
+        `生涯収入 = 平均年収 × 性別 × 学歴 × 職業 × 個人差 × 働いた年数 × 働けた割合 で計算します。物価や所得水準は今のままとし、1ドル=${YEN}円で換算しています。`,
+        `Lifetime earnings = average pay × sex × education × job × individual luck × years × share of years worked. Prices and incomes are held at today's levels, converted at ¥${YEN} per dollar.`)}</p>
+      <span class="formula">${t("平均年収","Average pay")}: ${t("1人あたりGDP","GDP per person")} $${fmtN(inc.gdp)} × 0.85 = $${fmtN(inc.base)}</span>
+      <span class="formula">${t("性別","Sex")} ×${inc.gap} ・ ${t("学歴","Education")} ×${inc.edu}${t(inc.edu>1?"（大卒）":inc.edu<1?"（小学校を出ていない）":"",inc.edu>1?" (degree)":inc.edu<1?" (no primary school)":"")} ・ ${t("職業","Job")} ×${(inc.works?inc.occ:.6).toFixed(2)}${inc.works?"":t("（たまに働く）"," (occasional work)")}</span>
+      <span class="formula">${t("個人差","Individual luck")}: ${t("ジニ係数","Gini")} ${inc.gini} → ${t("ばらつき","spread")} σ=${inc.sigma.toFixed(2)}${t("、乱数","; random")} z=<b>${inc.z.toFixed(2)}</b> → ×${inc.indiv.toFixed(2)}${t("（"," (")}${rankText(inc.top,cn)}${t("）",")")}</span>
+      <span class="formula">${t(`${inc.start}歳から${inc.end}歳まで ${inc.years}年 × 働けた割合 ${pct(inc.share)}`,`Age ${inc.start} to ${inc.end}: ${inc.years} years × share worked ${pct(inc.share)}`)}</span>
+      <span class="formula">= <b>${money(inc.total)}</b></span>`
+      :`<p>${t(`働き始める年齢（${inc.start}歳）まで生きられなかったので、生涯収入は0です。`,`You did not live to working age (${inc.start}), so lifetime earnings are zero.`)}</p>`);
+  $("calcSec").hidden=false;
+}
+function renderLife(rec,animate){
+  const {scope,P,pk}=rec, e=pk.item, total=pk.total, human=P.find(x=>x.name==="人間"), lk=look(e), nm=lName(e);
+  const wikiHost=t("ja","en"), wikiTerm=t(lk.wiki,e.nameEn);
+  $("result").innerHTML='<dl style="margin:0">'+
+    row(t("転生先","Reborn as"),`<div class="creature"><span class="emoji" aria-hidden="true">${lk.emoji}</span><div style="min-width:0"><span class="big">${nm}</span><span class="note"><span class="tag">${t(e.group,GROUP_EN[e.group])}</span>${t(e.note,e.noteEn)}</span><a class="wiki" href="https://${wikiHost}.wikipedia.org/w/index.php?search=${encodeURIComponent(wikiTerm)}" target="_blank" rel="noopener">${t("写真を見る（Wikipedia）","See photos (Wikipedia)")} ↗</a></div></div>`,0)+
+    (lk.m?row(t("大きさ","Size"),`<span class="big">${t(lk.dim[0]+" 約",lk.dim[1]+" about ")}${fmtSize(lk.m)}</span><span class="note">${e.name==="人間"?t("いまと同じくらい","About the same as now"):compare(lk.m)}</span>${scaleBar(lk.m)}`,1):"")+
+    row(t("確率","Odds"),`<span class="big">${prob(pk.p)}</span><span class="note">${t("推定個体数 約","Estimated population: about ")}${fmtN(e.n)}</span>`,2)+
+    row(t("一生","Lifespan"),`<span class="big mid">${t(e.life,e.lifeEn)}</span>`+(human&&e!==human?`<span class="note">${t("人間に生まれる確率は ","Chance of being born human: ")}${prob(human.n/total)}</span>`:""),3)+'</dl>';
+  if(!animate) $("result").querySelectorAll(".reveal").forEach(el=>el.classList.remove("reveal"));
+  const scopeName=scopeLabel(scope)+(scope==="all"?t("（ウイルスを含む）"," (including viruses)"):"");
+  $("steps").innerHTML=
+    step(t("候補をそろえる","Gather the candidates"),`<p>${t(`範囲「${scopeName}」に入る生き物の推定個体数をすべて足して、分母にします。`,`Add up the estimated population of every creature in “${scopeName}” to get the denominator.`)}</p>
+      <span class="formula">${t("候補の個体数の合計 = 約","Total population of all candidates = about ")}${fmtN(total)}</span>`)+
+    step(t("確率を出す","Work out the odds"),`<p>${t("地球上の1個体に生まれ変わると考え、個体数の割合をそのまま確率にします。","You are reborn as one individual on Earth, so each creature's share of the population is its chance.")}</p>
+      <span class="formula">${nm} ${t("約","about ")}${fmtN(e.n)} ÷ ${t("合計 約","total about ")}${fmtN(total)} = <b>${prob(pk.p)}</b></span>`)+
+    step(t("抽選","Draw"),`<p>${t("個体数の多い順に、0〜1の線を確率の幅で区切ります。乱数が入った区間の生き物に生まれ変わります。","Line the creatures up from most to least numerous and split the 0–1 line by their odds. You come back as whichever creature's slice the random number lands in.")}</p>
+      <span class="formula">${draw(pk)} → <b>${nm}</b></span>
+      <p>${t("上位の候補と確率：","Top candidates and their odds:")}</p>
+      ${candList(pk,i=>lName(P[i]),Math.max(6,pk.idx+1))}`);
+  $("calcSec").hidden=false;
+}
+function summary(rec){
+  if(rec.type==="human") return [`${cName(rec.k)} ・ ${sexName(rec.sex)} ・ ${ageText(rec.a.age)}`, causeName(rec.pd.item[0])];
+  return [lName(rec.pk.item), prob(rec.pk.p)];
+}
+
+const INTRO={
+  human:["世界の出生数から生まれる国が、その国の出生性比から性別が決まります。そこから人生の出来事、生涯収入、寿命、死因を、その国の統計をもとに引きます。",
+         "Your country comes from worldwide birth counts and your sex from that country's sex ratio at birth. Your life events, lifetime earnings, lifespan and cause of death are then drawn from that country's statistics."],
+  life:["地球上の推定個体数の割合で、次に何に生まれるかが決まります。範囲を狭めると、少しは人間に近づけます。",
+        "What you come back as depends on each creature's share of Earth's estimated population. Narrow the range to edge a little closer to being human."]
+};
+const FOOT={
+  human:["出生数・平均寿命・5歳未満死亡率・出生率は2023年前後の国連推計、1人あたりGDP・ジニ係数は世界銀行の値をもとにした概算です。死因・人生の出来事・生涯収入は、これらをもとにした簡易モデルです。",
+         "Births, life expectancy, under-5 mortality and fertility are rough figures based on UN estimates from around 2023; GDP per person and Gini come from World Bank figures. Causes of death, life events and lifetime earnings use simple models built on these."],
+  life:["個体数は研究ごとに数桁ずれる概算です。全生物にはウイルスも含めています。ウイルスと微生物の数は群を抜いて多いので、全生物ではほぼ確実にウイルスか細菌になります。",
+        "Populations are rough estimates that can differ by several orders of magnitude between studies. “All life” includes viruses. Viruses and microbes vastly outnumber everything else, so under “All life” you will almost certainly become a virus or a bacterium."]
+};
+
+const SCOPE_NAME={all:["全生物","All life"],multi:["多細胞生物","Multicellular life"],animal:["動物","Animals"],vert:["脊椎動物","Vertebrates"],
+  fish:["魚類","Fish"],mammal:["哺乳類","Mammals"],bird:["鳥類","Birds"],primate:["霊長類","Primates"]};
+const scopeTotal=s=>pool(s).reduce((a,e)=>a+e.n,0);
+function updateFunnel(){
+  const cur=curScope(), path=PATH[cur], branched=path.length>4;
+  Object.keys(PATH).forEach(s=>{
+    $("lv-"+s).textContent="10"+sup(Math.round(Math.log10(scopeTotal(s))));
+    const lv=$("scope-"+s).closest(".lv");
+    lv.classList.toggle("passed",path.includes(s)&&s!==cur);
+    lv.classList.toggle("off",branched&&!path.includes(s));
+  });
+  $("spine").classList.toggle("on",branched);
+  ["fish","mammal","bird"].forEach(c=>$("br-"+c).classList.toggle("on",path.includes(c)));
+  $("br-primate").classList.toggle("on",cur==="primate");
+  const P=pool(cur), tt=scopeTotal(cur), h=P.find(e=>e.name==="人間");
+  $("scopeInfo").innerHTML=`<b>${t(...SCOPE_NAME[cur])}</b><span>${t("分母 約","Total: about ")}${fmtN(tt)}</span><span>${h?t("人間に生まれる確率 ","Chance of being human: ")+prob(h.n/tt):t("この範囲に人間はいません","No humans in this range")}</span>`;
+}
+const TRUNK=["all","multi","animal","vert"];
+const PATH={all:TRUNK.slice(0,1),multi:TRUNK.slice(0,2),animal:TRUNK.slice(0,3),vert:TRUNK,
+  fish:[...TRUNK,"fish"],bird:[...TRUNK,"bird"],mammal:[...TRUNK,"mammal"],primate:[...TRUNK,"mammal","primate"]};
+
+function renderHistory(){
+  const h=hist[mode]; $("historySec").hidden=!h.length;
+  $("history").innerHTML=h.map(([n,rec])=>{const [a,b]=summary(rec);return `<li><span>${n}</span><span>${a}</span><span>${b}</span></li>`}).join("");
+}
+function renderTable(){
+  let rows,total;
+  if(mode==="human"){ rows=[...C].sort((a,b)=>b.births-a.births).map(c=>({label:cName(c),n:c.births})); total=birthsTotal;
+    $("tableSummary").textContent=t("国ごとの確率表を見る","Show odds by country"); }
+  else { const P=pool(); total=P.reduce((s,e)=>s+e.n,0); rows=[...P].sort((a,b)=>b.n-a.n).map(e=>({label:look(e).emoji+" "+lName(e),n:e.n}));
+    $("tableSummary").textContent=t("生き物ごとの確率表を見る","Show odds by creature"); }
+  const max=Math.log10(rows[0].n/total*1e40);
+  $("tbl").innerHTML=rows.map(r=>{
+    const p=r.n/total, w=mode==="human"?p/(rows[0].n/total)*100:clamp(Math.log10(p*1e40)/max*100,1,100);
+    return `<div class="tr"><div>${r.label}<div class="bar"><i style="width:${w}%"></i></div></div><div class="p">${prob(p)}</div></div>`;
+  }).join("");
+}
+/* ---------- シェア ---------- */
+const SHARE_URL="https://b0bisore.com/game/rinne-gacha/";
+const plain=html=>html.replace(/<span class="(digits|en|note)">.*?<\/span>/g,"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
+function shareText(rec){
+  const head=t("輪廻ガチャで転生したら…","I got reborn on Rebirth Gacha…"), tags=t("#輪廻ガチャ","#RebirthGacha");
+  if(rec.type==="human"){
+    const cn=cName(rec.k), sx=sexName(rec.sex), age=ageText(rec.a.age), cause=causeName(rec.pd.item[0]), m=plain(money(rec.inc.total));
+    const inc=rec.inc, job=inc.works&&inc.years>0?jobName(inc.pj.item):null;
+    return `${head}\n${t(`${cn}の${sx}に生まれ、${job?job+"として働き、":""}${age}で亡くなりました（${cause}）。生涯収入は${m}。`,
+      `Born ${sx.toLowerCase()} in ${cn}${job?", worked as: "+job:""}; died at ${age} (${cause}). Lifetime earnings: ${m}.`)}\n${tags}`;
+  }
+  return `${head}\n${t(`「${lName(rec.pk.item)}」に生まれ変わりました（確率 ${plain(prob(rec.pk.p))}）。`,`I came back as: ${lName(rec.pk.item)} (odds ${plain(prob(rec.pk.p))}).`)}\n${tags}`;
+}
+function renderShare(rec){
+  $("share").hidden=!rec; $("sh-text").hidden=true;
+  $("sh-copy").textContent=t("文章をコピー","Copy text");
+  if(!rec) return;
+  const text=shareText(rec), full=text+"\n"+SHARE_URL, e=encodeURIComponent;
+  $("sh-x").href=`https://twitter.com/intent/tweet?text=${e(text)}&url=${e(SHARE_URL)}`;
+  $("sh-line").href=`https://line.me/R/share?text=${e(full)}`;
+  $("sh-fb").href=`https://www.facebook.com/sharer/sharer.php?u=${e(SHARE_URL)}`;
+  $("sh-threads").href=`https://www.threads.net/intent/post?text=${e(full)}`;
+  $("sh-bsky").href=`https://bsky.app/intent/compose?text=${e(full)}`;
+  $("sh-text").value=full;
+}
+$("sh-copy").onclick=()=>{
+  const box=$("sh-text"), btn=$("sh-copy");
+  const fallback=()=>{box.hidden=false;box.focus();box.select();btn.textContent=t("下の文章を選択しました。コピーしてください","Text selected below — copy it");};
+  try{
+    navigator.clipboard.writeText(box.value).then(()=>{btn.textContent=t("コピーしました","Copied");},fallback);
+  }catch(err){fallback();}
+};
+
+function renderCurrent(animate){
+  const rec=current[mode];
+  renderShare(rec);
+  if(!rec){
+    $("result").innerHTML=`<p class="placeholder">${t("ボタンを押すと、次の"+(mode==="human"?"人生":"生")+"が記帳されます。","Press the button to record your next "+(mode==="human"?"life":"form of life")+" in the ledger.")}</p>`;
+    $("seal").hidden=true; $("calcSec").hidden=true; return;
+  }
+  mode==="human"?renderHuman(rec,animate):renderLife(rec,animate);
+  $("seal").hidden=false;
+}
+function renderAll(){
+  document.documentElement.lang=lang;
+  document.title=t("輪廻ガチャ","Rebirth Gacha");
+  document.querySelectorAll("[data-en]").forEach(el=>{el.textContent=t(el.dataset.ja,el.dataset.en);});
+  $("lang-ja").setAttribute("aria-pressed",lang==="ja"); $("lang-en").setAttribute("aria-pressed",lang==="en");
+  $("tab-human").setAttribute("aria-selected",mode==="human"); $("tab-life").setAttribute("aria-selected",mode==="life");
+  $("lifeOpts").hidden=mode!=="life";
+  $("intro").textContent=t(...INTRO[mode]); $("foot").textContent=t(...FOOT[mode]);
+  $("ledgerNo").textContent=t("第 "+rolls[mode]+" 回","No. "+rolls[mode]);
+  updateFunnel(); renderCurrent(false); renderHistory(); renderTable();
+}
+
+function roll(){
+  const btn=$("roll"); btn.disabled=true;
+  const w=$("wheel"); w.classList.remove("spin"); void w.offsetWidth; w.classList.add("spin");
+  $("seal").hidden=true; $("calcSec").hidden=true; $("share").hidden=true;
+  $("result").innerHTML=`<p class="placeholder">${t("魂が旅立っています…","Your soul is on its way…")}</p>`;
+  const delay=matchMedia("(prefers-reduced-motion: reduce)").matches?0:700;
+  setTimeout(()=>{
+    const rec=mode==="human"?drawHuman():drawLife();
+    current[mode]=rec; rolls[mode]++;
+    hist[mode].unshift([rolls[mode],rec]); hist[mode]=hist[mode].slice(0,10);
+    $("ledgerNo").textContent=t("第 "+rolls[mode]+" 回","No. "+rolls[mode]);
+    renderCurrent(true);
+    const s=$("seal"); s.classList.remove("stamp"); void s.offsetWidth; s.classList.add("stamp");
+    renderHistory(); btn.disabled=false;
+  },delay);
+}
+function setLang(l){ lang=l; try{localStorage.setItem("rinne-lang",l);}catch(e){} renderAll(); }
+
+document.querySelectorAll("[data-en]").forEach(el=>{el.dataset.ja=el.textContent;});
+$("tab-human").onclick=()=>{mode="human";renderAll();};
+$("tab-life").onclick=()=>{mode="life";renderAll();};
+$("lang-ja").onclick=()=>setLang("ja");
+$("lang-en").onclick=()=>setLang("en");
+$("roll").onclick=roll;
+document.querySelectorAll('input[name="scope"]').forEach(r=>r.onchange=()=>{updateFunnel();renderTable();});
+renderAll();
+</script>
+
+</body>
+</html>
