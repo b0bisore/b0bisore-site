@@ -291,7 +291,7 @@ function track(event,p){
   const action=ACTIONS[event];
   if(!LOG_URL||!action) return;
   p=p||{};
-  const body=JSON.stringify({action,mode:MODE_JA[p.mode]||"",result:p.result||"",detail:p.detail||"",lang,sid:SID,version:GAME_VERSION});
+  const body=JSON.stringify({action,mode:MODE_JA[p.mode]||"",result:p.result||"",detail:p.detail||"",lang,sid:SID,version:GAME_VERSION+(/b0bisore.com$/.test(location.hostname)?"":"-"+(/claude/.test(location.hostname)||!location.hostname?"claude":location.hostname))});
   try{ if(navigator.sendBeacon&&navigator.sendBeacon(LOG_URL,new Blob([body],{type:"text/plain"}))) return; }catch(e){}
   try{ fetch(LOG_URL,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},body}); }catch(e){}
 }
