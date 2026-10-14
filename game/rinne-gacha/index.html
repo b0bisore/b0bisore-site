@@ -283,7 +283,7 @@ details.table summary{cursor:pointer;font-weight:700;font-size:15px}
    空のあいだは何も送らない。名前など個人を特定できる情報は送らない */
 const LOG_URL="https://script.google.com/macros/s/AKfycbwxvLKhJA0gQhNPcWZeU9qLtbbVjHkX8Jt5CH3Z7WXrtE--rmiCzl14dby8HEfGZuT5Yw/exec"; // 輪廻ガチャ プレイ記録（スプレッドシート）の Apps Script ウェブアプリURL
 const SID=Math.random().toString(36).slice(2,10); // 訪問ごとの使い捨てID（同じ訪問の操作をまとめるため）
-const GAME_VERSION="v1.1.0";
+const GAME_VERSION="v1.2.0";
 // ゲーム内の出来事 → 記録シートに送る action（play_start は記録シート側で数えるので送らない）
 const ACTIONS={page_view:"visit",rebirth:"roll",share:"share",mode_switch:"mode",lang_switch:"lang"};
 const MODE_JA={life:"生命転生",human:"人間転生"};
@@ -551,6 +551,67 @@ function drawMemories(k,sex,death,ev,inc){
   const happy=pickWeighted(C,c=>c.w);
   return {rare,happy,C};
 }
+
+/* 仕事・家族・身の回りのめずらしい出来事（職業と収入が決まってから判定する）。確率は生涯で一度でも起きる確率の概算 */
+function drawMoreEvents(k,sex,death,ev,inc){
+  const d=ev.d, E=ev.E, rand=(lo,hi)=>lo+Math.random()*Math.max(0,hi-lo);
+  const add=(id,p,age,extra={})=>{ if(!(p>0)) return; const alive=death>=age; E.push({id,p,age,alive,happened:alive&&Math.random()<p,...extra}); };
+  // 身の回り
+  add("clover",.25,rand(5,40));
+  add("wallet",k.name==="日本"?.35:.08+.1*d,rand(15,Math.max(16,death)));
+  add("blood",.1+.3*d,rand(18,60));
+  add("rescue",.02,rand(15,Math.max(16,death)));
+  add("halley",.3,2061-2026);
+  add("tv",.05+.15*d,rand(5,Math.max(6,death)));
+  add("book",.002+.01*d,rand(25,75));
+  // 挑戦
+  add("space",1e-7+2e-6*d,rand(30,60));
+  add("everest",1e-6,rand(25,50));
+  add("antarctica",.0002+.002*d,rand(25,70));
+  add("olympics",2e-5,rand(18,30));
+  add("guinness",1e-5,rand(15,70));
+  // 仕事（主に働いた人だけ）
+  if(inc.works&&inc.years>0){
+    const job=inc.pj.item[0], w=()=>rand(inc.start,inc.end);
+    add("startup",job==="経営者・起業家"?.8:.03+.04*d,w());
+    add("abroadwork",.02+.04*d,w());
+    add("patent",["エンジニア・IT技術者","研究者"].includes(job)?.05:.001,w());
+    add("award",.12,w());
+    add("bankrupt",.06,w());
+    add("nobel",job==="研究者"?5e-5:0,rand(45,Math.max(46,inc.end+10)));
+    // 年収が10,000,000円を超える確率は、収入モデル（対数正規分布）から計算し、実際の年収で判定する
+    const median=inc.annual/inc.indiv, mu=Math.log(median)-inc.sigma*inc.sigma/2, th=1e7/YEN;
+    const p=1-Phi((Math.log(th)-mu)/inc.sigma);
+    if(p>1e-9) E.push({id:"highpay",p,age:inc.start+Math.min(15,inc.years/2),alive:true,happened:inc.annual>=th});
+  }
+  // 家族
+  const kids=E.find(e=>e.id==="kids"), marry=E.find(e=>e.id==="marry");
+  if(kids&&kids.ages.length) add("twinsparent",.02,kids.ages[Math.min(1,kids.ages.length-1)]);
+  if(marry&&marry.happened) add("golden",.6,marry.age+50);
+  if(kids&&kids.ages.length) add("greatgrand",.6,kids.ages[0]+50);
+}
+Object.assign(EV_NAME,{
+  clover:["四つ葉のクローバーを見つける","Found a four-leaf clover"],wallet:["落とした財布が無事に戻ってくる","Got a lost wallet back intact"],
+  blood:["献血をする","Donated blood"],rescue:["人の命を救う","Saved someone's life"],halley:["ハレー彗星を見る（2061年）","Saw Halley's Comet (2061)"],
+  tv:["テレビに映る","Appeared on TV"],book:["本を出版する","Published a book"],space:["宇宙へ行く","Went to space"],everest:["エベレストに登頂","Summited Mount Everest"],
+  antarctica:["南極を訪れる","Visited Antarctica"],olympics:["オリンピックに出場","Competed in the Olympics"],guinness:["ギネス世界記録を持つ","Held a Guinness World Record"],
+  startup:["自分の会社を立ち上げる","Started my own company"],abroadwork:["海外で働く","Worked abroad"],patent:["特許を取る","Was granted a patent"],
+  award:["仕事で表彰される","Won an award at work"],bankrupt:["勤め先が倒産する","My employer went bankrupt"],nobel:["ノーベル賞を受賞","Won a Nobel Prize"],
+  highpay:["年収が10,000,000円を超える","Earned over ¥10,000,000 a year"],twinsparent:["双子の親になる","Became a parent of twins"],
+  golden:["金婚式を迎える","Celebrated a golden wedding anniversary"],greatgrand:["ひ孫に会う","Met a great-grandchild"]
+});
+Object.assign(HAPPY_EV,{
+  clover:[3,"四つ葉のクローバーを見つけた日","The day I found a four-leaf clover"],wallet:[3,"落とした財布が戻ってきた日","The day my lost wallet came back"],
+  rescue:[8,"人の命を救えた日","The day I saved someone's life"],halley:[4,"ハレー彗星を見上げた夜","The night I looked up at Halley's Comet"],
+  book:[8,"自分の本が書店に並んだ日","Seeing my book in a bookshop"],space:[12,"宇宙から地球を見た瞬間","Seeing Earth from space"],
+  everest:[10,"エベレストの頂上に立った瞬間","Standing on the summit of Everest"],antarctica:[6,"南極の氷原に立った日","Standing on the ice of Antarctica"],
+  olympics:[12,"オリンピックの舞台に立った日","Stepping onto the Olympic stage"],guinness:[6,"世界記録に認定された日","The day my world record was confirmed"],
+  startup:[8,"自分の会社を立ち上げた日","The day I started my own company"],abroadwork:[5,"海外の職場で働き始めた日","My first day working abroad"],
+  patent:[5,"特許が認められた日","The day my patent was granted"],award:[7,"仕事で表彰された日","The day I won an award at work"],
+  nobel:[15,"ノーベル賞の知らせを受けた朝","The morning I heard I'd won the Nobel Prize"],highpay:[4,"初めて年収が10,000,000円を超えた年","The year I first earned over ¥10,000,000"],
+  twinsparent:[10,"双子を初めて抱いた日","The day I first held my twins"],golden:[12,"金婚式を家族に祝われた日","My family celebrating our golden wedding anniversary"],
+  greatgrand:[12,"ひ孫を初めて抱いた日","The day I first held my great-grandchild"]
+});
 const rareP=p=>p>=.001?pct(p):prob(p);
 function memoriesHtml(rec){
   const {rare,happy}=rec.mem, h=happy.item;
@@ -775,7 +836,9 @@ function drawHuman(){
   const pc=pickWeighted(C,c=>c.births), k=pc.item;
   const sx=sexOf(k), ps=pickWeighted(["m","f"],s=>s==="m"?sx.pm:1-sx.pm), sex=ps.item;
   const a=sampleAge(k,sex), pd=causeOf(a.age,k,sex);
-  const ev=drawEvents(k,sex,a.age), inc=drawEarnings(k,sex,a.age,ev), mem=drawMemories(k,sex,a.age,ev,inc);
+  const ev=drawEvents(k,sex,a.age), inc=drawEarnings(k,sex,a.age,ev);
+  drawMoreEvents(k,sex,a.age,ev,inc);
+  const mem=drawMemories(k,sex,a.age,ev,inc);
   return {type:"human",k,pc,sx,ps,sex,a,pd,ev,inc,mem,year:2026};
 }
 function drawLife(){
