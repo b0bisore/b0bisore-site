@@ -9,6 +9,7 @@
 | `game/rinne-gacha/index.html` | https://b0bisore.com/game/rinne-gacha/ | 輪廻ガチャ本体（1ファイルで完結） |
 | `game/rinne-gacha/og.png` | 同上/og.png | SNS共有時のプレビュー画像（1200×630） |
 | `inochi/` | https://b0bisore.com/inochi/ | いのち時計(ブラウザ版)。**正本は非公開リポジトリ `b0bisore/inochi-clock-app` の `web/`**。ここは公開用の写し |
+| `inochi-test/` | https://b0bisore.com/inochi-test/ | いのち時計のテスト版(本番に出す前の確認用。記録なし・検索除外) |
 | `CNAME` | — | 独自ドメイン設定。消さない |
 | `.nojekyll` | — | GitHub Pages の変換を止める。消さない |
 
@@ -42,7 +43,7 @@
 - 記録の項目を変えたら `GAME_VERSION` を上げる。
 
 ## いのち時計(inochi/)の決まりごと
-- `inochi/` を直接編集しない。`b0bisore/inochi-clock-app` の `web/` を直してテスト(`TZ=Asia/Tokyo node --test tests/web-core.test.mjs`)してから、`web/` の中身をそのまま `inochi/` に写す。
+- `inochi/` を直接編集しない。`b0bisore/inochi-clock-app` の `web/` を直してテスト(`TZ=Asia/Tokyo node --test tests/web-core.test.mjs`)してから、`web/` の中身をそのまま写す(`sh tools/publish.sh test` → `inochi-test/`、確認後に `sh tools/publish.sh prod` → `inochi/`)。本番 `inochi/` への反映は持ち主の確認後。
 - 確認すること:初回設定で生年月日を入れるとメイン画面が出る/今日のたとえ・今日のうたが出る/スマホ幅(約390px)ではみ出さない/コンソールにエラーが出ない。
 - 共有URL・canonical・og:url は `https://b0bisore.com/inochi/`。
 - 数字に3けたごとの「,」は付けない(本人指示。輪廻ガチャの「カンマ区切り」の決まりとは別)。

@@ -3,7 +3,7 @@ import {
   analogyForDay, analogyWith, ARTIST, comma, compare, currentWeekOfYear, DAY, fmtDate, fmtUnit, GRID, LIFE,
   lifeYears, makeQuizzes, messageFor, parseBirth, PEOPLE, seasons, snapshot, songForDay, UNIT_ORDER, UNITS, YEAR, ageAt, bdayIn,
 } from './core.js';
-import { track, loadCounter } from './count.js';
+import { track, loadCounter, IS_TEST } from './count.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -25,6 +25,11 @@ const B = () => parseBirth(S.birth);
 const L = () => lifeYears(S);
 const pad = (n) => String(n).padStart(2, '0');
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// テスト版は画面の上に帯を出す(本番と見分けるため)
+if (IS_TEST) {
+  document.title = '【テスト版】' + document.title;
+  document.body.insertAdjacentHTML('afterbegin', '<div class="testbar">テスト版 — 記録は送りません。本番は <a href="../inochi/">b0bisore.com/inochi/</a></div>');
+}
 const LOOKS = ['pop', 'calm', 'dot'];
 const applyLook = (look) => {
   if (look === 'calm' || look === 'dot') document.documentElement.dataset.style = look; else delete document.documentElement.dataset.style;

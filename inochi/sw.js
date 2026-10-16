@@ -2,12 +2,14 @@
 // ・このサイトの部品(ページ・JS・CSS・画像):毎回まず最新を取りに行き、電波がないときだけ保存分を使う(更新がすぐ届く)
 // ・書体など外のサイトの部品:保存分を使う(変わらないため)
 // ・記録の送信(script.google.com)には関わらない
-const CACHE = 'inochi-v4';
+// 本番(/inochi/)とテスト版(/inochi-test/)は保存場所の名前を分け、互いの保存分を消さない
+const PREFIX = /\/inochi-test\//.test(self.registration.scope) ? 'inochi-test-v' : 'inochi-v';
+const CACHE = PREFIX + '5';
 const SHELL = ['./', './style.css', './js/app.js', './js/core.js', './js/count.js', './manifest.webmanifest', './icon-192.png', './favicon.png'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
