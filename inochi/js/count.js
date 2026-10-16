@@ -6,7 +6,7 @@
 //   このアプリだけの出来事は action「event」として detail に種類を入れる(setup_done・revisit・music_link)。
 // ・記録の項目を変えたら APP_VERSION を上げる。
 // ・数は近似。使い捨てIDなので人数とは断定しない。共有ボタンは押した回数で、実際の投稿とは区別する。
-const LOG_URL = ''; // いのち時計 プレイ記録(スプレッドシート)の Apps Script ウェブアプリURL
+const LOG_URL = 'https://script.google.com/macros/s/AKfycbxxV_vWSIvMjKbqEsyDW_e_3mM0A_VyHfK-SCCnnlP_0rI5aFs5CpiE0HKm969UVZKESQ/exec'; // いのち時計 プレイ記録(スプレッドシート)の Apps Script ウェブアプリURL
 const APP_VERSION = 'v1.0.0';
 const SID = Math.random().toString(36).slice(2, 10);
 const DAY_KEY = 'inochi.lastday';
