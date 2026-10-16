@@ -246,3 +246,7 @@ html[data-style="dot"] .row h3::before, html[data-style="dot"] .legend span::bef
 html[data-style="dot"] .chip, html[data-style="dot"] .tip { border-radius: 0; font-weight: 400; }
 html[data-style="dot"] .today .big { background: var(--marker); padding: 0 6px; }
 html[data-style="dot"] b, html[data-style="dot"] strong, html[data-style="dot"] h1, html[data-style="dot"] h2, html[data-style="dot"] h3 { font-weight: 400; }
+
+/* テスト版の帯(/inochi-test/ のときだけ表示) */
+.testbar { margin: 0 auto 10px; max-width: 520px; padding: 6px 12px; font-size: 12px; font-weight: 800; text-align: center; background: repeating-linear-gradient(-45deg, #FFD23F 0 10px, #FFE57A 10px 20px); color: #1E1A2E; border-radius: 8px; }
+.testbar a { color: #1E1A2E; }
