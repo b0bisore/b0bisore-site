@@ -1,0 +1,16 @@
+{
+  "name": "いのち時計 — いのちの残り時間",
+  "short_name": "いのち時計",
+  "description": "今日は人生の何日目?次の誕生日や平均寿命までののこりの時間を、毎日ちがうたとえで数える暦。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F4F6FF",
+  "theme_color": "#5867F5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
