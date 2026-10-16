@@ -2,7 +2,7 @@
 // ・このサイトの部品(ページ・JS・CSS・画像):毎回まず最新を取りに行き、電波がないときだけ保存分を使う(更新がすぐ届く)
 // ・書体など外のサイトの部品:保存分を使う(変わらないため)
 // ・記録の送信(script.google.com)には関わらない
-const CACHE = 'inochi-v3';
+const CACHE = 'inochi-v4';
 const SHELL = ['./', './style.css', './js/app.js', './js/core.js', './js/count.js', './manifest.webmanifest', './icon-192.png', './favicon.png'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });

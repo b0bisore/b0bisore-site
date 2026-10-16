@@ -286,7 +286,74 @@ function planMessages(now, b, L, opts, max = 60) {
   }
   return out;
 }
+
+// ── クイズ:のこりの時間で何回できるか(4択)。毎日入れ替わる ──
+// 「今日のたとえ」と「たとえ一覧」に答えが出ている題材は出さない。
+var QUIZ_Q = {
+  "外国語": "何か国語、話せるようになる?",
+  "週末": "週末は、あと何回ある?",
+  "日記": "日記帳は、何冊うまる?",
+  "写真": "「今日の1枚」は、何枚撮れる?",
+  "電話": "大切な人と、何回話せる?",
+  "マラソン": "フルマラソン何回分の距離を走れる?",
+  "日本縦断": "日本列島を、何回縦断できる?",
+  "料理": "新しい料理を、いくつ覚えられる?",
+  "旅": "旅には、何回出られる?",
+  "音楽": "好きな曲を、何曲聴ける?",
+  "本": "何冊の本が読める?",
+  "映画": "何本の映画が見られる?",
+  "散歩": "地球を何周できる?",
+  "習いごと": "新しいことが、いくつ身につく?",
+  "満月": "満月を、何回見られる?",
+  "朝ごはん": "朝ごはんは、何回食べられる?"
+};
+var MULTS = [[0.1, 0.3, 3], [0.3, 3, 10], [0.1, 3, 10], [0.3, 0.1, 3], [3, 10, 0.3]];
+/** 選択肢用のおおよその数(10未満は小数1けた、それ以上は上2けた) */
+function approx(x) {
+  if (x < 10) return (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, "");
+  const p = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+  return String(Math.round(x / p) * p);
+}
+function makeQuizzes(day, b, L, count = 3) {
+  const s = snapshot(day, b, L);
+  const keys = s.leftMs > 0 ? ["life", "round"] : ["round", "bday"];
+  const exclude = new Set([...GRID_KEYS, analogyForDay(day, b, L).k]);
+  const pool = POOL.filter((r) => !exclude.has(r.k) && QUIZ_Q[r.k]);
+  const out = [];
+  const seed = s.dayNum;
+  // 題材の並びを日ごとにかき混ぜる(同じ組み合わせが続かないように)
+  const h = (k) => { let x = seed * 2654435761 % 4294967296; for (const ch of k) x = (x ^ ch.charCodeAt(0)) * 16777619 % 4294967296; return x; };
+  const order = [...pool].sort((x, y) => h(x.k) - h(y.k));
+  for (let i = 0; i < order.length && out.length < count; i++) {
+    const rule = order[i];
+    const key = keys[out.length % 2]; // 1問目・3問目は平均寿命まで、2問目はキリのいい年齢まで(超えた人は年齢・誕生日)
+    const { name, days } = spanInfo(day, b, L, key);
+    const v = rule.per(days);
+    if (!(v >= 1)) continue;
+    const ms = MULTS[(seed + out.length) % MULTS.length];
+    const vals = [v, ...ms.map((m) => v * m)];
+    const shown = vals.map(approx);
+    if (new Set(shown).size < 4) continue;
+    // 並び替え(その日・その問題で決まる)
+    const pos = [0, 1, 2, 3].sort((x, y) => ((x * 7 + seed + out.length * 3) % 4) - ((y * 7 + seed + out.length * 3) % 4));
+    out.push({
+      id: rule.k,
+      k: rule.k,
+      premise: `${name}、${rule.how.replace(/と$/, "")}としたら…`,
+      q: QUIZ_Q[rule.k],
+      choices: pos.map((j) => shown[j]),
+      answer: pos.indexOf(0),
+      unit: rule.unit,
+      exact: fmt(v, rule.dec),
+      why: `${name} あと${Math.floor(days)}日。${rule.why}。`
+    });
+  }
+  return out;
+}
 export {
+  makeQuizzes,
+  approx,
+  QUIZ_Q,
   ARTIST,
   DAY,
   DEFAULT_PERSON,

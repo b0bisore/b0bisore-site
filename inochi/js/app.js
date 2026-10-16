@@ -1,7 +1,7 @@
 // いのち時計(ブラウザ版)の画面。計算は core.js、数える仕組みは count.js。
 import {
   analogyForDay, analogyWith, ARTIST, comma, compare, currentWeekOfYear, DAY, fmtDate, fmtUnit, GRID, LIFE,
-  lifeYears, messageFor, parseBirth, PEOPLE, seasons, snapshot, songForDay, UNIT_ORDER, UNITS, YEAR, ageAt, bdayIn,
+  lifeYears, makeQuizzes, messageFor, parseBirth, PEOPLE, seasons, snapshot, songForDay, UNIT_ORDER, UNITS, YEAR, ageAt, bdayIn,
 } from './core.js';
 import { track, loadCounter } from './count.js';
 
@@ -25,8 +25,17 @@ const B = () => parseBirth(S.birth);
 const L = () => lifeYears(S);
 const pad = (n) => String(n).padStart(2, '0');
 const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const applyLook = (look) => { if (look === 'calm') document.documentElement.dataset.style = 'calm'; else delete document.documentElement.dataset.style; };
+const LOOKS = ['pop', 'calm', 'dot'];
+const applyLook = (look) => {
+  if (look === 'calm' || look === 'dot') document.documentElement.dataset.style = look; else delete document.documentElement.dataset.style;
+  $$('#looks button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === (LOOKS.includes(look) ? look : 'pop'))));
+};
 applyLook(S.look);
+// 見た目の切り替えは画面上部に常に表示(設定の中には置かない)
+$$('#looks button').forEach((btn) => btn.addEventListener('click', () => {
+  S.look = btn.dataset.v; save(); applyLook(S.look);
+  if (view === 'main') drawWeeks();
+}));
 
 let view = parseBirth(S.birth) ? 'main' : 'setup';
 let timer = null;
@@ -60,12 +69,6 @@ function renderForm() {
         </div>
         <p class="note" id="fBasis"></p>
       </div>
-      <div class="group">
-        <span class="label">見た目</span>
-        <div class="seg" role="group" aria-label="見た目" id="fLook">
-          <button type="button" data-v="pop" aria-pressed="${f.look !== 'calm'}">ポップ</button><button type="button" data-v="calm" aria-pressed="${f.look === 'calm'}">落ち着き</button>
-        </div>
-      </div>
       <p class="note">生年月日などは、このブラウザの中だけに保存します。どこにも送信しません。アカウント登録もありません。</p>
       <button class="primary" type="button" id="submit">${isSetup ? 'はじめる' : '保存する'}</button>
       ${isSetup ? '' : `
@@ -98,16 +101,13 @@ function renderForm() {
     f.sex = btn.dataset.v; $$('#fSex button').forEach((x) => x.setAttribute('aria-pressed', String(x === btn))); sync();
   }));
   $('#fCustom').addEventListener('input', (e) => { f.custom = Math.round(Number(e.target.value)); sync(); });
-  $$('#fLook button').forEach((btn) => btn.addEventListener('click', () => {
-    f.look = btn.dataset.v; applyLook(f.look); $$('#fLook button').forEach((x) => x.setAttribute('aria-pressed', String(x === btn)));
-  }));
   $('#submit').addEventListener('click', () => {
     if (f.sex !== 'c') f.custom = S.custom || 90;
-    S = { ...S, ...f }; save();
+    S = { ...S, ...f, look: S.look }; save();
     if (isSetup) track('setup_done');
     view = 'main'; render();
   });
-  $('#close')?.addEventListener('click', () => { applyLook(S.look); view = 'main'; render(); });
+  $('#close')?.addEventListener('click', () => { view = 'main'; render(); });
   $('#wipe')?.addEventListener('click', () => {
     $('#wipeBox').innerHTML = `<p style="font-weight:800">本当に消しますか?元に戻せません。</p>
       <div class="group" style="margin-top:8px"><button class="danger fill" type="button" id="wipeYes">消す</button><button class="ghost" type="button" id="wipeNo">やめる</button></div>`;
@@ -159,6 +159,8 @@ function renderMain() {
       </div>
       <p class="note" style="margin-top:-18px">${S.sex === 'c' ? `目標年齢 ${S.custom}歳で計算しています。` : '平均寿命は令和7年簡易生命表(厚生労働省)による0歳時点の平均余命です。一人ひとりの寿命を予測するものではありません。'}</p>
 
+      <div id="quiz-0"></div>
+
       <div class="group"><span class="label">あと何回、めぐってくるか</span>
         <div class="seasons">
           ${[['桜', se.sakura, 'sakura'], ['夏', se.summer, 'natsu'], ['紅葉', se.autumn, 'momiji'], ['誕生日', se.birthday, 'bd']]
@@ -175,12 +177,16 @@ function renderMain() {
         <div class="grid" id="ana"></div>
       </div>
 
+      <div id="quiz-1"></div>
+
       <div class="group">
         <h2 style="font-size:20px">同じ年齢で亡くなった人と比べる</h2>
         <select class="input" id="person" aria-label="比べる人">${PEOPLE.map((q, i) => `<option value="${i}" ${q === p ? 'selected' : ''}>${esc(q.name)}(${q.age}歳)</option>`).join('')}</select>
         <div class="card cmp" id="cmp"></div>
         <p class="note">年齢は満年齢、生きた日数は西暦の生年月日・没年月日から数えたものです。歴史上の日付には諸説あります。</p>
       </div>
+
+      <div id="quiz-2"></div>
 
       <div class="group" style="gap:4px">
         <h2 style="font-size:20px">一生を、週で並べる</h2>
@@ -223,6 +229,8 @@ function renderMain() {
   $('#weeks').addEventListener('click', onGridTap);
   renderAna();
   renderCompare();
+  quizzes = makeQuizzes(now, b, Lv);
+  quizzes.forEach((_, i) => renderQuiz(i));
   drawWeeks();
   loadCounter().then((n) => { if (n) $('#counter').textContent = `これまでに ${comma(n)} 回ひらかれました`; });
   tick();
@@ -270,6 +278,40 @@ function renderAna() {
     : '';
 }
 
+// ── クイズ:のこりの時間で何回できるか(画面に3問を散りばめる。答えはその日のあいだ覚えておく) ──
+let quizzes = [];
+function quizState() {
+  const today = iso(new Date());
+  const st = store.get('inochi.quiz');
+  return st && st.day === today ? st : { day: today, answers: {} };
+}
+function renderQuiz(i) {
+  const box = $(`#quiz-${i}`), q = quizzes[i];
+  if (!box || !q) return;
+  const st = quizState();
+  const picked = st.answers[q.id];
+  const done = picked !== undefined;
+  const answered = quizzes.filter((x) => st.answers[x.id] !== undefined);
+  const right = answered.filter((x) => st.answers[x.id] === x.answer).length;
+  box.innerHTML = `<div class="card quiz" aria-label="クイズ ${i + 1}">
+    <div class="ta-top"><span class="eyebrow">クイズ ${i + 1}/${quizzes.length}</span>${answered.length ? `<span class="chip">今日の正解 ${right}/${answered.length}</span>` : ''}</div>
+    <p class="quiz-premise">${esc(q.premise)}</p>
+    <p class="quiz-q">${esc(q.q)}</p>
+    <div class="choices" role="group" aria-label="答えを選ぶ">
+      ${q.choices.map((c, j) => `<button type="button" class="choice${done && j === q.answer ? ' ok' : ''}${done && j === picked && j !== q.answer ? ' ng' : ''}" data-j="${j}" ${done ? 'disabled' : ''}>約${esc(c)}<small>${esc(q.unit)}</small></button>`).join('')}
+    </div>
+    ${done ? `<p class="quiz-result">${picked === q.answer ? '正解!' : `ざんねん。正解は 約${esc(q.choices[q.answer])}${esc(q.unit)}`}<span>ちょうどだと ${esc(q.exact)}${esc(q.unit)}</span></p><p class="ta-why">${esc(q.why)}</p>` : ''}
+  </div>`;
+  $$('.choice', box).forEach((btn) => btn.addEventListener('click', () => {
+    const j = Number(btn.dataset.j);
+    const s2 = quizState();
+    s2.answers[q.id] = j;
+    store.set('inochi.quiz', s2);
+    track('quiz', { result: j === q.answer ? 'correct' : 'wrong', detail: `quiz:${q.k}` });
+    quizzes.forEach((_, k) => renderQuiz(k)); // 得点の表示をそろえる
+  }));
+}
+
 // ── 人物との比較 ──
 function renderCompare() {
   const b = B(), p = PEOPLE[S.person ?? 5] || PEOPLE[5];
@@ -296,7 +338,7 @@ function drawWeeks() {
   const dpr = window.devicePixelRatio || 1;
   cv.width = W * dpr; cv.height = H * dpr; cv.style.height = `${H}px`;
   const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H);
-  const pop = S.look !== 'calm', r = pop ? cell / 2.6 : 0;
+  const r = S.look === 'pop' || !LOOKS.includes(S.look) ? cell / 2.6 : 0;
   const cPast = css('--ai'), cNow = css('--now'), cFut = css('--future'), cMuted = css('--muted');
   const age = ageAt(now, b), cur = currentWeekOfYear(now, b);
   ctx.font = `10px ${css('--f-num')}`; ctx.textBaseline = 'middle';
