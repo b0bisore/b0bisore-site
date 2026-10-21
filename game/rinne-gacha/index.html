@@ -282,8 +282,18 @@ details.table summary{cursor:pointer;font-weight:700;font-size:15px}
    LOG_URL に Apps Script のウェブアプリURLを入れると、操作ごとに1行ずつスプレッドシートへ記録する。
    空のあいだは何も送らない。名前など個人を特定できる情報は送らない */
 const LOG_URL="https://script.google.com/macros/s/AKfycbwxvLKhJA0gQhNPcWZeU9qLtbbVjHkX8Jt5CH3Z7WXrtE--rmiCzl14dby8HEfGZuT5Yw/exec"; // 輪廻ガチャ プレイ記録（スプレッドシート）の Apps Script ウェブアプリURL
-const SID=Math.random().toString(36).slice(2,10); // 訪問ごとの使い捨てID（同じ訪問の操作をまとめるため）
-const GAME_VERSION="v1.2.0";
+// 訪問ID：公式サイトのカウンターと同じく、30分以内の再訪問や同じ日の操作は1つの訪問として数える（日付は日本時間）
+const SID=(()=>{
+  const fresh=()=>Math.random().toString(36).slice(2,10);
+  try{
+    const day=new Date(Date.now()+9*3600000).toISOString().slice(0,10), now=Date.now();
+    let v=JSON.parse(sessionStorage.getItem("rinne-visit")||"null");
+    if(!v||now-v.last>1800000||v.day!==day) v={id:fresh(),day};
+    v.last=now; sessionStorage.setItem("rinne-visit",JSON.stringify(v));
+    return v.id;
+  }catch(e){ return fresh(); }
+})();
+const GAME_VERSION="v1.3.0";
 // ゲーム内の出来事 → 記録シートに送る action（play_start は記録シート側で数えるので送らない）
 const ACTIONS={page_view:"visit",rebirth:"roll",share:"share",mode_switch:"mode",lang_switch:"lang"};
 const MODE_JA={life:"生命転生",human:"人間転生"};
