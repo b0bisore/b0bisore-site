@@ -1,15 +1,20 @@
-# b0bisore.com サイト（GitHub Pages）
+# play.b0bisore.com サイト（GitHub Pages）
 
-このフォルダは GitHub の `b0bisore/b0bisore-site` と同期しています。`main` ブランチにプッシュすると、1〜2分で https://b0bisore.com に反映されます（GitHub Pages）。Claude Code・Codex のどちらからでも同じ手順で更新できます。AGENTS.md も同じ内容です。
+このフォルダは GitHub の `b0bisore/b0bisore-site` と同期しています。`main` ブランチにプッシュすると、1〜2分で https://play.b0bisore.com に反映されます（GitHub Pages）。Claude Code・Codex のどちらからでも同じ手順で更新できます。AGENTS.md も同じ内容です。
+
+## ドメイン
+- `b0bisore.com`（ルート）は別のサイト「ぼぶのつくったもの。｜BOB / WORKS & LINKS」が使っている（Cloudflare 経由・このリポジトリでは管理していない）。2026-10-22 に本人の判断で、このリポジトリは `play.b0bisore.com` で配信する形に変更した。
+- DNS（Xserver）：`play.b0bisore.com` を CNAME で `b0bisore.github.io` に向ける。GitHub Pages のカスタムドメインと `CNAME` ファイルも `play.b0bisore.com`。
+- `b0bisore.com` のDNSを GitHub に向け直さない（WORKS & LINKS が見えなくなる）。
 
 ## 構成
 | パス | 公開URL | 内容 |
 |---|---|---|
-| `index.html` | https://b0bisore.com/ | ゲーム一覧 https://games.b0bisore.com/ （ChatGPT Sites で別管理）へ転送するだけのページ |
-| `game/rinne-gacha/index.html` | https://b0bisore.com/game/rinne-gacha/ | 輪廻ガチャ本体（1ファイルで完結） |
+| `index.html` | https://play.b0bisore.com/ | ゲーム一覧 https://games.b0bisore.com/ （ChatGPT Sites で別管理）へ転送するだけのページ |
+| `game/rinne-gacha/index.html` | https://play.b0bisore.com/game/rinne-gacha/ | 輪廻ガチャ本体（1ファイルで完結） |
 | `game/rinne-gacha/og.png` | 同上/og.png | SNS共有時のプレビュー画像（1200×630） |
-| `inochi/` | https://b0bisore.com/inochi/ | いのち時計(ブラウザ版)。**正本は非公開リポジトリ `b0bisore/inochi-clock-app` の `web/`**。ここは公開用の写し |
-| `inochi-test/` | https://b0bisore.com/inochi-test/ | いのち時計のテスト版(本番に出す前の確認用。記録なし・検索除外) |
+| `inochi/` | https://play.b0bisore.com/inochi/ | いのち時計(ブラウザ版)。**正本は非公開リポジトリ `b0bisore/inochi-clock-app` の `web/`**。ここは公開用の写し |
+| `inochi-test/` | https://play.b0bisore.com/inochi-test/ | いのち時計のテスト版(本番に出す前の確認用。記録なし・検索除外) |
 | `CNAME` | — | 独自ドメイン設定。消さない |
 | `.nojekyll` | — | GitHub Pages の変換を止める。消さない |
 
@@ -28,7 +33,7 @@
 - コンソールにエラーが出ないこと。
 
 ## 輪廻ガチャの決まりごと
-- シェアURL（`SHARE_URL`）、canonical、og:url は `https://b0bisore.com/game/rinne-gacha/`。URLを変えるときは3か所とも直す。
+- シェアURL（`SHARE_URL`）、canonical、og:url は `https://play.b0bisore.com/game/rinne-gacha/`。URLを変えるときは3か所とも直す。
 - 外部から読み込むのは Google Fonts だけ。ライブラリや画像を外部から読み込まない。
 - 画面の文字はすべて日本語と英語の両方を用意する（`t("日本語","English")`）。
 - 数字は日本語の単位（万・億・兆）を使わず、カンマ区切りと「×10の何乗（0を並べた表記）」で書く。英語の読み（billion など）は英語表示のときだけ付ける。
@@ -46,7 +51,7 @@
 ## いのち時計(inochi/)の決まりごと
 - `inochi/` を直接編集しない。`b0bisore/inochi-clock-app` の `web/` を直してテスト(`TZ=Asia/Tokyo node --test tests/web-core.test.mjs`)してから、`web/` の中身をそのまま写す(`sh tools/publish.sh test` → `inochi-test/`、確認後に `sh tools/publish.sh prod` → `inochi/`)。本番 `inochi/` への反映は持ち主の確認後。
 - 確認すること:初回設定で生年月日を入れるとメイン画面が出る/今日のたとえ・今日のうたが出る/スマホ幅(約390px)ではみ出さない/コンソールにエラーが出ない。
-- 共有URL・canonical・og:url は `https://b0bisore.com/inochi/`。
+- 共有URL・canonical・og:url は `https://play.b0bisore.com/inochi/`（2026-10-22 時点では いのち時計の正本側がまだ `b0bisore.com/inochi/` のまま。正本 `web/` を直してから写すこと）。
 - 数字に3けたごとの「,」は付けない(本人指示。輪廻ガチャの「カンマ区切り」の決まりとは別)。
 - 計測は輪廻ガチャと同じ Googleスプレッドシート方式(「いのち時計 プレイ記録」)。`inochi/js/count.js` の `LOG_URL` が空なら何も送らない。受け口のコードは `inochi-clock-app` の `tools/analytics/Code.gs`(このリポジトリには置かない)。生年月日・年齢・計算結果は送らない。
 - 歌詞(今日のうた)はアイスクリームネバーグラウンドの自主管理曲で、本人提供の文面そのまま。文字を変えない。
